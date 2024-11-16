@@ -6,25 +6,41 @@
         <field name="inherit_id" ref="base_setup.res_config_settings_view_form" />
         <field name="arch" type="xml">
             <xpath expr="//block[@name='integration']" position="after">
-                <block title="InvoiceXpress" groups="base.group_no_one" name="invoice_express">
-                    <setting string="InvoiceXpress"
+                <block
+                    title="InvoiceXpress"
+                    groups="base.group_no_one"
+                    name="invoice_express"
+                >
+                    <setting
+                        string="InvoiceXpress"
                         help="Integration with InvoiceXpress for generating invoices and managing API settings"
-                        id="l10n_pt_account_invoicexpress">
-                        <a href="https://www.app.invoicexpress.com/users/api" target="_blank">
+                        id="l10n_pt_account_invoicexpress"
+                    >
+                        <a
+                            href="https://www.app.invoicexpress.com/users/api"
+                            target="_blank"
+                        >
                             <i class="fa fa-arrow-right" /> Generate an API key </a>
                         <div class="content-group" name="invoicexpress_options">
                             <div class="mt16">
-                                <label for="invoicexpress_account_name"
-                                    string="InvoiceXpress Account Name" />
+                                <label
+                                    for="invoicexpress_account_name"
+                                    string="InvoiceXpress Account Name"
+                                />
                                 <field name="invoicexpress_account_name" />
                             </div>
                             <div class="mt16">
-                                <label for="invoicexpress_api_key" string="InvoiceXpress API Key" />
+                                <label
+                                    for="invoicexpress_api_key"
+                                    string="InvoiceXpress API Key"
+                                />
                                 <field name="invoicexpress_api_key" />
                             </div>
                             <div class="mt16">
-                                <label for="invoicexpress_template_id"
-                                    string="InvoiceXpress Invoice Email Template" />
+                                <label
+                                    for="invoicexpress_template_id"
+                                    string="InvoiceXpress Invoice Email Template"
+                                />
                                 <field name="invoicexpress_template_id" />
                             </div>
                         </div>
