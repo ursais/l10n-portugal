@@ -19,6 +19,16 @@ class TestInvoiceXpress(common.TransactionCase):
     def setUp(self):
         super().setUp()
 
+        if not self.env.company.chart_template_id:
+            # Load a CoA if there's none in current company
+            coa = self.env.ref("l10n_generic_coa.configurable_chart_template", False)
+            if not coa:
+                # Load the first available CoA
+                coa = self.env["account.chart.template"].search(
+                    [("visible", "=", True)], limit=1
+                )
+            coa.try_loading(company=self.env.company, install_demo=False)
+
         self.company = self.env.company
         self.company.write(
             {
