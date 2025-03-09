@@ -93,6 +93,11 @@ msgid "ID"
 msgstr "ID"
 
 #. module: l10n_pt_vat
+#: model:account.l10n_pt.vat.exempt.reason,name:l10n_pt_vat.M08
+msgid "IVA - Autoliquidação"
+msgstr "IVA - Autoliquidação"
+
+#. module: l10n_pt_vat
 #: model:account.l10n_pt.vat.exempt.reason,name:l10n_pt_vat.M20
 msgid "IVA - Regime forfetário"
 msgstr ""
@@ -340,9 +345,6 @@ msgstr "Nota de Crédito de Fornecedor"
 
 #~ msgid "Exigibilidade de caixa"
 #~ msgstr "Exigibilidade de caixa"
-
-#~ msgid "IVA - Autoliquidação"
-#~ msgstr "IVA - Autoliquidação"
 
 #~ msgid "Invoice"
 #~ msgstr "Fatura"
