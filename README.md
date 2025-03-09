@@ -24,7 +24,7 @@ addon | version | maintainers | summary
 [l10n_pt_account_invoicexpress](l10n_pt_account_invoicexpress/) | 16.0.1.2.4 | [![dreispt](https://github.com/dreispt.png?size=30px)](https://github.com/dreispt) | Portuguese certified invoices using InvoiceXpress
 [l10n_pt_stock_invoicexpress](l10n_pt_stock_invoicexpress/) | 16.0.1.0.2 | [![dreispt](https://github.com/dreispt.png?size=30px)](https://github.com/dreispt) | Portuguese legal transport and shipping documents (Guias de Transporte e Guias de Remessa) generated with InvoiceXpress
 [l10n_pt_stock_vehicle_daily](l10n_pt_stock_vehicle_daily/) | 16.0.1.0.0 |  | Daily documente with vehicle content, to communicate to Portuguese Tax Authorities
-[l10n_pt_vat](l10n_pt_vat/) | 16.0.1.2.0 | [![dreispt](https://github.com/dreispt.png?size=30px)](https://github.com/dreispt) | Portuguese VAT requirements extensions
+[l10n_pt_vat](l10n_pt_vat/) | 16.0.1.3.0 | [![dreispt](https://github.com/dreispt.png?size=30px)](https://github.com/dreispt) | Portuguese VAT requirements extensions
 
 [//]: # (end addons)
 
