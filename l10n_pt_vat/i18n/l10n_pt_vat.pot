@@ -89,6 +89,11 @@ msgid "ID"
 msgstr ""
 
 #. module: l10n_pt_vat
+#: model:account.l10n_pt.vat.exempt.reason,name:l10n_pt_vat.M08
+msgid "IVA - Autoliquidação"
+msgstr ""
+
+#. module: l10n_pt_vat
 #: model:account.l10n_pt.vat.exempt.reason,name:l10n_pt_vat.M20
 msgid "IVA - Regime forfetário"
 msgstr ""
