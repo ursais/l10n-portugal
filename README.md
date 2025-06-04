@@ -21,9 +21,9 @@ Available addons
 ----------------
 addon | version | maintainers | summary
 --- | --- | --- | ---
-[l10n_pt_account_invoicexpress](l10n_pt_account_invoicexpress/) | 17.0.1.0.0 | [![dreispt](https://github.com/dreispt.png?size=30px)](https://github.com/dreispt) | Portuguese certified invoices using InvoiceXpress
-[l10n_pt_stock_invoicexpress](l10n_pt_stock_invoicexpress/) | 17.0.1.0.0 | [![dreispt](https://github.com/dreispt.png?size=30px)](https://github.com/dreispt) | Portuguese legal transport and shipping documents (Guias de Transporte e Guias de Remessa) generated with InvoiceXpress
-[l10n_pt_vat](l10n_pt_vat/) | 17.0.1.2.0 | [![dreispt](https://github.com/dreispt.png?size=30px)](https://github.com/dreispt) | Portuguese VAT requirements extensions
+[l10n_pt_account_invoicexpress](l10n_pt_account_invoicexpress/) | 17.0.1.0.0 | <a href='https://github.com/dreispt'><img src='https://github.com/dreispt.png' width='32' height='32' style='border-radius:50%;' alt='dreispt'/></a> | Portuguese certified invoices using InvoiceXpress
+[l10n_pt_stock_invoicexpress](l10n_pt_stock_invoicexpress/) | 17.0.1.0.0 | <a href='https://github.com/dreispt'><img src='https://github.com/dreispt.png' width='32' height='32' style='border-radius:50%;' alt='dreispt'/></a> | Portuguese legal transport and shipping documents (Guias de Transporte e Guias de Remessa) generated with InvoiceXpress
+[l10n_pt_vat](l10n_pt_vat/) | 17.0.1.2.0 | <a href='https://github.com/dreispt'><img src='https://github.com/dreispt.png' width='32' height='32' style='border-radius:50%;' alt='dreispt'/></a> | Portuguese VAT requirements extensions
 
 [//]: # (end addons)
 
