@@ -1,0 +1,59 @@
+/* Multibanco & MB WAY Payment Styles */
+
+.mb-reference-field {
+    text-align: center;
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+
+    label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+
+    .h3 {
+        margin: 0;
+        font-family: "Courier New", monospace;
+        letter-spacing: 0.1em;
+    }
+}
+
+.card-header {
+    i.fa {
+        margin-right: 0.5rem;
+    }
+}
+
+/* MB WAY specific styles */
+.bg-success {
+    background-color: #28a745 !important;
+}
+
+#mbway_phone {
+    font-size: 1.25rem;
+    font-family: "Courier New", monospace;
+    letter-spacing: 0.1em;
+    text-align: center;
+}
+
+.badge-primary {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}
+
+/* Print styles for Multibanco reference */
+@media print {
+    .mb-reference-field {
+        border: 2px solid #000;
+        page-break-inside: avoid;
+    }
+
+    .alert {
+        border: 1px solid #000;
+    }
+}

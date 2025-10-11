@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Multibanco Payment Reference Display Template -->
+    <template id="multibanco_reference" name="Multibanco Payment Reference">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fa fa-university" /> Multibanco Payment Reference
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">
+                    Please use the following reference to complete your payment at any ATM,
+                    online banking, or MB WAY app.
+                </p>
+
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="mb-reference-field">
+                            <label class="text-muted">Entity</label>
+                            <div class="h3 font-weight-bold text-primary">
+                                <t t-esc="mb_entity" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-reference-field">
+                            <label class="text-muted">Reference</label>
+                            <div class="h3 font-weight-bold text-primary">
+                                <t t-esc="mb_reference" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-reference-field">
+                            <label class="text-muted">Amount</label>
+                            <div class="h3 font-weight-bold text-primary">
+                                <t t-esc="mb_amount" /> €
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3" t-if="mb_expiry_date">
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <i class="fa fa-clock-o" />
+                            <strong>Expiry Date:</strong>
+                            <t t-esc="mb_expiry_date" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h5>How to Pay:</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fa fa-university text-primary" />
+                            <strong
+                        >ATM:</strong> Select "Payments" → "Services/Purchases" → Enter Entity and Reference
+                        </li>
+                        <li class="mb-2">
+                            <i class="fa fa-laptop text-primary" />
+                            <strong
+                        >Online Banking:</strong> Use the Multibanco payment option with the above details
+                        </li>
+                        <li class="mb-2">
+                            <i class="fa fa-mobile text-primary" />
+                            <strong
+                        >MB WAY:</strong> Use the "Pay with Multibanco" option in your MB WAY app
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fa fa-info-circle" />
+                    Your order will be confirmed automatically once the payment is received.
+                    This usually takes a few minutes.
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Extend the payment form to show Multibanco reference -->
+    <template
+        id="easypay_mb_form"
+        name="EasyPay Multibanco Form"
+        inherit_id="payment_easypay.easypay_form"
+    >
+        <xpath expr="//t[@t-else]" position="after">
+            <t t-if="mb_entity and mb_reference">
+                <t t-call="payment_easypay_mb.multibanco_reference" />
+            </t>
+        </xpath>
+    </template>
+
+    <!-- MB WAY Payment Status Display Template -->
+    <template id="mbway_status" name="MB WAY Payment Status">
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fa fa-mobile" /> MB WAY Payment Request
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">
+                    A payment request has been sent to your MB WAY app.
+                </p>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="mb-reference-field">
+                            <label class="text-muted">Phone Number</label>
+                            <div class="h3 font-weight-bold text-success">
+                                <t t-esc="mbway_phone" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-reference-field">
+                            <label class="text-muted">Amount</label>
+                            <div class="h3 font-weight-bold text-success">
+                                <t t-esc="mbway_amount" /> €
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle" />
+                            <strong>Status:</strong>
+                            <span class="badge badge-primary">
+                                <t t-esc="mbway_status or 'Waiting for approval'" />
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h5>Next Steps:</h5>
+                    <ol>
+                        <li class="mb-2">Open your MB WAY app on your phone</li>
+                        <li class="mb-2">Check for the payment notification</li>
+                        <li class="mb-2">Review the payment details</li>
+                        <li class="mb-2">Approve the payment with your PIN</li>
+                    </ol>
+                </div>
+
+                <div class="alert alert-warning mt-3">
+                    <i class="fa fa-clock-o" />
+                    <strong
+                >Important:</strong> You have 4 minutes to approve this payment request.
+                    After that, the request will expire and you'll need to try again.
+                </div>
+
+                <div class="alert alert-success mt-3">
+                    <i class="fa fa-check-circle" />
+                    Your order will be confirmed automatically once you approve the payment in your MB WAY app.
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- MB WAY Phone Input Form -->
+    <template id="mbway_phone_input" name="MB WAY Phone Input">
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fa fa-mobile" /> Pay with MB WAY
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">
+                    Enter your Portuguese phone number to receive a payment request in your MB WAY app.
+                </p>
+
+                <div class="form-group mt-4">
+                    <label for="mbway_phone">Phone Number</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">+351</span>
+                        </div>
+                        <input
+                            type="tel"
+                            class="form-control form-control-lg"
+                            id="mbway_phone"
+                            name="mbway_phone"
+                            placeholder="9XXXXXXXX"
+                            pattern="[0-9]{9}"
+                            maxlength="9"
+                            required="required"
+                        />
+                    </div>
+                    <small class="form-text text-muted">
+                        Enter your 9-digit Portuguese mobile number (without +351)
+                    </small>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fa fa-info-circle" />
+                    Make sure your MB WAY app is installed and activated on this phone number.
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Extend the payment form to show MB WAY status -->
+    <template
+        id="easypay_mbway_form"
+        name="EasyPay MB WAY Form"
+        inherit_id="payment_easypay.easypay_form"
+    >
+        <xpath expr="//t[@t-else]" position="after">
+            <t t-if="mbway_phone and mbway_status">
+                <t t-call="payment_easypay_mb.mbway_status" />
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Transaction form view - add Multibanco and MB WAY fields -->
+    <record id="payment_transaction_form_mb" model="ir.ui.view">
+        <field name="name">payment.transaction.form.mb</field>
+        <field name="model">payment.transaction</field>
+        <field name="inherit_id" ref="payment.payment_transaction_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='transaction_details']" position="after">
+                <group
+                    string="Multibanco Details"
+                    invisible="provider_code != 'easypay'"
+                >
+                    <field name="easypay_mb_entity" readonly="1" />
+                    <field name="easypay_mb_reference" readonly="1" />
+                    <field name="easypay_mb_expiry_date" readonly="1" />
+                </group>
+                <group string="MB WAY Details" invisible="provider_code != 'easypay'">
+                    <field name="easypay_mbway_phone" />
+                    <field name="easypay_mbway_alias" readonly="1" />
+                    <field name="easypay_mbway_status" readonly="1" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
