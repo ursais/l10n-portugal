@@ -18,6 +18,9 @@ exclude: |
   /build/|/dist/|
   # Ignore test files in addons
   /tests/samples/.*|
+  # Ignore Odoo future backports
+  ^l10n_pt_future_account/.*|
+  ^l10n_pt_certification/.*|
   # You don't usually want a bot to modify your legal texts
   (LICENSE.*|COPYING.*)
 default_language_version:
