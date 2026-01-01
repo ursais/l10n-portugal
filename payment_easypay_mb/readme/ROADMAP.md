@@ -1,0 +1,3 @@
+- Add specific views for Multibanco reference display
+- Add phone number input for MB WAY
+- Add QR code support for both methods

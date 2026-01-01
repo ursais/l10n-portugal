@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- Multibanco Payment Method -->
+    <record id="payment_method_multibanco" model="payment.method">
+        <field name="name">Multibanco</field>
+        <field name="code">multibanco</field>
+        <field name="primary_payment_method_id" ref="payment.payment_method_unknown" />
+        <field
+            name="image"
+            type="base64"
+            file="payment_easypay_mb/static/src/img/multibanco.png"
+        />
+        <field name="supported_country_ids" eval="[(4, ref('base.pt'))]" />
+        <field name="supported_currency_ids" eval="[(4, ref('base.EUR'))]" />
+    </record>
+
+    <!-- MB WAY Payment Method -->
+    <record id="payment_method_mbway" model="payment.method">
+        <field name="name">MB WAY</field>
+        <field name="code">mbway</field>
+        <field name="primary_payment_method_id" ref="payment.payment_method_unknown" />
+        <field
+            name="image"
+            type="base64"
+            file="payment_easypay_mb/static/src/img/mbway.png"
+        />
+        <field name="supported_country_ids" eval="[(4, ref('base.pt'))]" />
+        <field name="supported_currency_ids" eval="[(4, ref('base.EUR'))]" />
+    </record>
+</odoo>

@@ -1,0 +1,258 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* payment_easypay_mb
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-11 15:21+0000\n"
+"PO-Revision-Date: 2025-10-11 15:21+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: pt\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_phone_input
+msgid "9XXXXXXXX"
+msgstr "9XXXXXXXX"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid ""
+"<i class=\"fa fa-check-circle\"/> \n"
+"                    Your order will be confirmed automatically once you approve the payment in your MB WAY app."
+msgstr ""
+"<i class=\"fa fa-check-circle\"/> \n"
+"                    A sua encomenda será confirmada automaticamente assim que aprovar o pagamento na sua app MB WAY."
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid ""
+"<i class=\"fa fa-clock-o\"/> \n"
+"                            <strong>Expiry Date:</strong>"
+msgstr ""
+"<i class=\"fa fa-clock-o\"/> \n"
+"                            <strong>Data de Validade:</strong>"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid ""
+"<i class=\"fa fa-clock-o\"/> \n"
+"                    <strong>Important:</strong> You have 4 minutes to approve this payment request.\n"
+"                    After that, the request will expire and you'll need to try again."
+msgstr ""
+"<i class=\"fa fa-clock-o\"/> \n"
+"                    <strong>Importante:</strong> Tem 4 minutos para aprovar este pedido de pagamento.\n"
+"                    Depois disso, o pedido expirará e terá de tentar novamente."
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid ""
+"<i class=\"fa fa-info-circle\"/> \n"
+"                            <strong>Status:</strong>"
+msgstr ""
+"<i class=\"fa fa-info-circle\"/> \n"
+"                            <strong>Estado:</strong>"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_phone_input
+msgid ""
+"<i class=\"fa fa-info-circle\"/> \n"
+"                    Make sure your MB WAY app is installed and activated on this phone number."
+msgstr ""
+"<i class=\"fa fa-info-circle\"/> \n"
+"                    Certifique-se de que a sua app MB WAY está instalada e ativada neste número de telefone."
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid ""
+"<i class=\"fa fa-info-circle\"/> \n"
+"                    Your order will be confirmed automatically once the payment is received.\n"
+"                    This usually takes a few minutes."
+msgstr ""
+"<i class=\"fa fa-info-circle\"/> \n"
+"                    A sua encomenda será confirmada automaticamente assim que o pagamento for recebido.\n"
+"                    Isto normalmente demora alguns minutos."
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid ""
+"<i class=\"fa fa-laptop text-primary\"/> \n"
+"                            <strong>Online Banking:</strong> Use the Multibanco payment option with the above details"
+msgstr ""
+"<i class=\"fa fa-laptop text-primary\"/> \n"
+"                            <strong>Homebanking:</strong> Use a opção de pagamento Multibanco com os dados acima"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid ""
+"<i class=\"fa fa-mobile text-primary\"/> \n"
+"                            <strong>MB WAY:</strong> Use the \"Pay with Multibanco\" option in your MB WAY app"
+msgstr ""
+"<i class=\"fa fa-mobile text-primary\"/> \n"
+"                            <strong>MB WAY:</strong> Use a opção \"Pagar com Multibanco\" na sua app MB WAY"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid "<i class=\"fa fa-mobile\"/> MB WAY Payment Request"
+msgstr "<i class=\"fa fa-mobile\"/> Pedido de Pagamento MB WAY"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_phone_input
+msgid "<i class=\"fa fa-mobile\"/> Pay with MB WAY"
+msgstr "<i class=\"fa fa-mobile\"/> Pagar com MB WAY"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid ""
+"<i class=\"fa fa-university text-primary\"/> \n"
+"                            <strong>ATM:</strong> Select \"Payments\" → \"Services/Purchases\" → Enter Entity and Reference"
+msgstr ""
+"<i class=\"fa fa-university text-primary\"/> \n"
+"                            <strong>Multibanco:</strong> Selecione \"Pagamentos\" → \"Serviços/Compras\" → Introduza Entidade e Referência"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid "<i class=\"fa fa-university\"/> Multibanco Payment Reference"
+msgstr "<i class=\"fa fa-university\"/> Referência de Pagamento Multibanco"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_phone_input
+msgid ""
+"<small class=\"form-text text-muted\">\n"
+"                        Enter your 9-digit Portuguese mobile number (without +351)\n"
+"                    </small>"
+msgstr ""
+"<small class=\"form-text text-muted\">\n"
+"                        Introduza o seu número de telemóvel português de 9 dígitos (sem +351)\n"
+"                    </small>"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_phone_input
+msgid "<span class=\"input-group-text\">+351</span>"
+msgstr "<span class=\"input-group-text\">+351</span>"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid "A payment request has been sent to your MB WAY app."
+msgstr "Foi enviado um pedido de pagamento para a sua app MB WAY."
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid "Amount"
+msgstr "Montante"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid "Approve the payment with your PIN"
+msgstr "Aprove o pagamento com o seu PIN"
+
+#. module: payment_easypay_mb
+#: model:ir.model.fields.selection,name:payment_easypay_mb.selection__payment_transaction__easypay_mbway_status__approved
+msgid "Approved"
+msgstr "Aprovado"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid "Check for the payment notification"
+msgstr "Verifique a notificação de pagamento"
+
+#. module: payment_easypay_mb
+#: model:ir.model.fields.selection,name:payment_easypay_mb.selection__payment_transaction__easypay_mbway_status__declined
+msgid "Declined"
+msgstr "Recusado"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_phone_input
+msgid ""
+"Enter your Portuguese phone number to receive a payment request in your MB "
+"WAY app."
+msgstr ""
+"Introduza o seu número de telemóvel português para receber um pedido de pagamento na sua app MB "
+"WAY."
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid "Entity"
+msgstr "Entidade"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid "How to Pay:"
+msgstr "Como Pagar:"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.payment_transaction_form_mb
+msgid "MB WAY Details"
+msgstr "Detalhes MB WAY"
+
+#. module: payment_easypay_mb
+#: model:ir.model.fields.selection,name:payment_easypay_mb.selection__payment_provider__easypay_payment_method__mb
+msgid "Multibanco"
+msgstr "Multibanco"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.payment_transaction_form_mb
+msgid "Multibanco Details"
+msgstr "Detalhes Multibanco"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid "Next Steps:"
+msgstr "Próximos Passos:"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid "Open your MB WAY app on your phone"
+msgstr "Abra a sua app MB WAY no seu telemóvel"
+
+#. module: payment_easypay_mb
+#: model:ir.model,name:payment_easypay_mb.model_payment_provider
+msgid "Payment Provider"
+msgstr "Fornecedor de Pagamento"
+
+#. module: payment_easypay_mb
+#: model:ir.model,name:payment_easypay_mb.model_payment_transaction
+msgid "Payment Transaction"
+msgstr "Transação de Pagamento"
+
+#. module: payment_easypay_mb
+#: model:ir.model.fields.selection,name:payment_easypay_mb.selection__payment_transaction__easypay_mbway_status__pending
+msgid "Pending"
+msgstr "Pendente"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_phone_input
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid "Phone Number"
+msgstr "Número de Telemóvel"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid ""
+"Please use the following reference to complete your payment at any ATM,\n"
+"                    online banking, or MB WAY app."
+msgstr ""
+"Por favor, use a seguinte referência para completar o seu pagamento em qualquer Multibanco,\n"
+"                    homebanking, ou app MB WAY."
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.multibanco_reference
+msgid "Reference"
+msgstr "Referência"
+
+#. module: payment_easypay_mb
+#: model_terms:ir.ui.view,arch_db:payment_easypay_mb.mbway_status
+msgid "Review the payment details"
+msgstr "Reveja os detalhes do pagamento"
+
+#. module: payment_easypay_mb
+#: model:ir.model.fields.selection,name:payment_easypay_mb.selection__payment_transaction__easypay_mbway_status__timeout
+msgid "Timeout"
+msgstr "Expirado"
