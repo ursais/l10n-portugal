@@ -117,12 +117,12 @@ class StockPicking(models.Model):
         }.get(doctype)
 
     def _prepare_invoicexpress_lines(self):
-        lines = self.move_ids_without_package.filtered("quantity")
+        lines = self.move_ids.filtered("quantity")
         # Ensure Taxes are created on InvoiceXpress
-        lines.mapped("sale_line_id.tax_id").action_invoicexpress_tax_create()
+        lines.mapped("sale_line_id.tax_ids").action_invoicexpress_tax_create()
         items = []
         for line in lines:
-            tax = line.sale_line_id.tax_id[:1]
+            tax = line.sale_line_id.tax_ids[:1]
             # tax_detail = {"name": tax.name, "value": tax.amount} if tax else {}
             tax_detail = {"name": tax.name} if tax else {}
             items.append(
