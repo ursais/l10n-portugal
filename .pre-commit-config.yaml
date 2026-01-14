@@ -18,12 +18,11 @@ exclude: |
   /build/|/dist/|
   # Ignore test files in addons
   /tests/samples/.*|
+  # You don't usually want a bot to modify your legal texts
+  (LICENSE.*|COPYING.*)|
   # Ignore Odoo future backports
   ^l10n_pt_future_account/.*|
   ^l10n_pt_certification/.*|
-  # You don't usually want a bot to modify your legal texts
-  (LICENSE.*|COPYING.*)|
-  # Specific tax CSV file exclusion
   ^l10n_pt_apo_coa/data/template/account\.tax-pt\.csv$
 default_language_version:
   python: python3
