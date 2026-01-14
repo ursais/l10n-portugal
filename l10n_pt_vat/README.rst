@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 ==============
 Portugal - IVA
 ==============
@@ -17,7 +13,7 @@ Portugal - IVA
 .. |badge1| image:: https://img.shields.io/badge/maturity-Production%2FStable-green.png
     :target: https://odoo-community.org/page/development-status
     :alt: Production/Stable
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fl10n--portugal-lightgray.png?logo=github
@@ -36,9 +32,9 @@ This modules extends the base localization modules with a few VAT
 specific functions that are required by the Portuguese Tax Authorities,
 including:
 
-- The use of pre-defined legally accepted reasons for issuing credit
-  notes, as required for fields 40/41 of the VAT statement (Portaria nº
-  255/2013).
+-  The use of pre-defined legally accepted reasons for issuing credit
+   notes, as required for fields 40/41 of the VAT statement (Portaria nº
+   255/2013).
 
 NOTE: scheduled to replaced by the future core module
 ``l10n_pt_certification``.
@@ -75,11 +71,11 @@ Authors
 Contributors
 ------------
 
-- Pedro Castro Silva (`Sossia <http://www.sossia.pt>`__)
+-  Pedro Castro Silva (`Sossia <http://www.sossia.pt>`__)
 
-- `Open Source Integrators <https://www.opensourceintegrators.com>`__
+-  `Open Source Integrators <https://www.opensourceintegrators.com>`__
 
-     - Daniel Reis (dreis@opensourceintegrators.com)
+      -  Daniel Reis (dreis@opensourceintegrators.com)
 
 Maintainers
 -----------
