@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+# Copyright 2025 APO - Associação Portuguesa Odoo
+# License LGPL (GNU Lesser General Public License)
+# Autors:
+#   João Vitor Batista Pinheiro (joao.vitor.pinheiro@qubiq.info)
+#   Dylan da Silva (dylan.silva@arxi.pt)
+#
+-->
+<odoo>
+    <record id="l10n_pt_view_account_tax_group_form" model="ir.ui.view">
+        <field name="name">l10n_pt.account.tax.group.form</field>
+        <field name="model">account.tax.group</field>
+        <field name="inherit_id" ref="account.view_tax_group_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='pos_receipt_label']" position="after">
+                <field name="l10n_pt_fiscal_zone" />
+                <field name="l10n_pt_tax_code" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

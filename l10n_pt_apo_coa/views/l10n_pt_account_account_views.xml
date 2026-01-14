@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+# Copyright 2025 APO - Associação Portuguesa Odoo
+# License LGPL (GNU Lesser General Public License)
+# Autors:
+#   João Vitor Batista Pinheiro (joao.vitor.pinheiro@qubiq.info)
+#   Dylan da Silva (dylan.silva@arxi.pt)
+#
+-->
+<odoo>
+    <record id="l10n_pt_view_account_list" model="ir.ui.view">
+        <field name="name">l10n_pt.account.account.list</field>
+        <field name="model">account.account</field>
+        <field name="inherit_id" ref="account.view_account_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='account_type']" position="after">
+                <field name="possible_taxonomy_ids" column_invisible="True" />
+                <field
+                    name="taxonomy_ids"
+                    optional="show"
+                    domain="[('id','in', possible_taxonomy_ids)]"
+                    widget="many2many_tags"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

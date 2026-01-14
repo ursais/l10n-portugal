@@ -1,0 +1,19 @@
+"id","country_id","name","tax_payable_account_id","tax_receivable_account_id","name@pt","l10n_pt_fiscal_zone","l10n_pt_tax_code","preceding_subtotal"
+"tax_group_iva_0","base.pt","VAT 0%","chart_2436","chart_2437","IVA 0%","PT",ISE,
+"tax_group_iva_4","base.pt","VAT 4%","chart_2436","chart_2437","IVA 4%","PT-AC",RED,
+"tax_group_iva_5","base.pt","VAT 5%","chart_2436","chart_2437","IVA 5%","PT-MA",RED,
+"tax_group_iva_6","base.pt","VAT 6%","chart_2436","chart_2437","IVA 6%","PT",RED,
+"tax_group_iva_9","base.pt","VAT 9%","chart_2436","chart_2437","IVA 9%","PT-AC",INT,
+"tax_group_iva_12","base.pt","VAT 12%","chart_2436","chart_2437","IVA 12%","PT-MA",INT,
+"tax_group_iva_13","base.pt","VAT 13%","chart_2436","chart_2437","IVA 13%","PT",INT,
+"tax_group_iva_16","base.pt","VAT 16%","chart_2436","chart_2437","IVA 16%","PT-AC",NOR,
+"tax_group_iva_22","base.pt","VAT 22%","chart_2436","chart_2437","IVA 22%","PT-MA",NOR,
+"tax_group_iva_23","base.pt","VAT 23%","chart_2436","chart_2437","IVA 23%","PT",NOR,
+"tax_group_ret_0","base.pt","Withholding 0%","chart_2422","chart_2422","Retenções 0%",,NS,"Document Total"
+"tax_group_ret_11_5","base.pt","Withholding 11.5%","chart_2422","chart_2422","Retenções 11.5%",,NS,"Document Total"
+"tax_group_ret_16_5","base.pt","Withholding 16.5%","chart_2422","chart_2422","Retenções 16.5%",,NS,"Document Total"
+"tax_group_ret_20","base.pt","Withholding 20%","chart_2422","chart_2422","Retenções 20%",,NS,"Document Total"
+"tax_group_ret_23","base.pt","Withholding 23%","chart_2422","chart_2422","Retenções 23%",,NS,"Document Total"
+"tax_group_ret_25","base.pt","Withholding 25%","chart_2422","chart_2422","Retenções 25%",,NS,"Document Total"
+"tax_group_ret_28","base.pt","Withholding 28%","chart_2422","chart_2422","Retenções 28%",,NS,"Document Total"
+"tax_group_ret_35","base.pt","Withholding 35%","chart_2422","chart_2422","Retenções 35%",,NS,"Document Total"

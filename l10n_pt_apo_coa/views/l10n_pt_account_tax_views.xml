@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+# Copyright 2025 APO - Associação Portuguesa Odoo
+# License LGPL (GNU Lesser General Public License)
+# Autors:
+#   João Vitor Batista Pinheiro (joao.vitor.pinheiro@qubiq.info)
+#   Dylan da Silva (dylan.silva@arxi.pt)
+#
+-->
+<odoo>
+    <record id="l10n_pt_view_account_tax_form" model="ir.ui.view">
+        <field name="name">l10n_pt.account.tax.form</field>
+        <field name="model">account.tax</field>
+        <field name="inherit_id" ref="account.view_tax_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='advanced_options']" position="after">
+                <page name="l10n_pt_settings" string="PT Localization">
+                    <group>
+                        <group string="Type">
+                            <field name="l10n_pt_tax_type" />
+                            <field name="l10n_pt_tax_code" />
+                            <field name="l10n_pt_fiscal_zone" />
+                            <field
+                                name="l10n_pt_vat_exempt_reason"
+                                invisible="not(l10n_pt_tax_type == 'IVA' and l10n_pt_tax_code == 'ISE')"
+                                required="l10n_pt_tax_type == 'IVA' and l10n_pt_tax_code == 'ISE'"
+                            />
+                            <field
+                                name="l10n_pt_stamp_duty_code"
+                                invisible="l10n_pt_tax_type != 'IS'"
+                                required="l10n_pt_tax_type == 'IS'"
+                            />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
