@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="payment_provider_form_easypay" model="ir.ui.view">
+        <field name="name">payment.provider.form.easypay</field>
+        <field name="model">payment.provider</field>
+        <field name="inherit_id" ref="payment.payment_provider_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='provider_credentials']" position="after">
+                <group name="easypay_credentials" invisible="code != 'easypay'">
+                    <group>
+                        <field name="easypay_account_id" required="code == 'easypay'" />
+                        <field
+                            name="easypay_api_key"
+                            password="True"
+                            required="code == 'easypay'"
+                        />
+                        <button
+                            name="action_easypay_test_connection"
+                            type="object"
+                            string="Test Connection"
+                            class="oe_link"
+                        />
+                        <button
+                            name="action_easypay_configure_webhooks"
+                            type="object"
+                            string="Configure Webhooks"
+                            class="oe_link"
+                        />
+                        <field name="easypay_webhook_base_url" readonly="1" />
+                    </group>
+                    <group>
+                        <field name="easypay_use_checkout" />
+                        <field
+                            name="easypay_payment_method_ids"
+                            widget="many2many_checkboxes"
+                            invisible="easypay_use_checkout == False"
+                        />
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

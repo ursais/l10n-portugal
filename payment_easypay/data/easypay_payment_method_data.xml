@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- EasyPay Payment Methods from API Documentation -->
+    <record id="payment_method_cc" model="easypay.payment.method">
+        <field name="name">Credit/Debit Card</field>
+        <field name="code">cc</field>
+    </record>
+
+    <record id="payment_method_mb" model="easypay.payment.method">
+        <field name="name">Multibanco</field>
+        <field name="code">mb</field>
+    </record>
+
+    <record id="payment_method_mbw" model="easypay.payment.method">
+        <field name="name">MB WAY</field>
+        <field name="code">mbw</field>
+    </record>
+
+    <record id="payment_method_dd" model="easypay.payment.method">
+        <field name="name">SEPA Direct Debit</field>
+        <field name="code">dd</field>
+    </record>
+
+    <record id="payment_method_vi" model="easypay.payment.method">
+        <field name="name">Virtual IBAN</field>
+        <field name="code">vi</field>
+    </record>
+
+    <record id="payment_method_ap" model="easypay.payment.method">
+        <field name="name">Apple Pay</field>
+        <field name="code">ap</field>
+    </record>
+
+    <record id="payment_method_gp" model="easypay.payment.method">
+        <field name="name">Google Pay</field>
+        <field name="code">gp</field>
+    </record>
+
+    <record id="payment_method_sw" model="easypay.payment.method">
+        <field name="name">Samsung Pay</field>
+        <field name="code">sw</field>
+    </record>
+</odoo>
