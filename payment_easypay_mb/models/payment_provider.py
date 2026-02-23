@@ -8,7 +8,7 @@ class PaymentProvider(models.Model):
     _inherit = "payment.provider"
 
     easypay_payment_method = fields.Selection(
-        selection_add=[
+        selection=[
             ("mb", "Multibanco"),
             ("mbw", "MB Way"),
         ],

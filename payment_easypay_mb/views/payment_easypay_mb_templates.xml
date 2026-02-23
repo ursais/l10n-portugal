@@ -85,7 +85,7 @@
     <template
         id="easypay_mb_form"
         name="EasyPay Multibanco Form"
-        inherit_id="payment_easypay.easypay_form"
+        inherit_id="payment_easypay.redirect_form"
     >
         <xpath expr="//t[@t-else]" position="after">
             <t t-if="mb_entity and mb_reference">
@@ -210,7 +210,7 @@
     <template
         id="easypay_mbway_form"
         name="EasyPay MB WAY Form"
-        inherit_id="payment_easypay.easypay_form"
+        inherit_id="payment_easypay.redirect_form"
     >
         <xpath expr="//t[@t-else]" position="after">
             <t t-if="mbway_phone and mbway_status">
