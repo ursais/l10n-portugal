@@ -26,6 +26,7 @@ class AccountMove(models.Model):
         readonly=False,
     )
 
+    @api.depends("country_code", "move_type")
     def _compute_is_l10npt_vat_enabled(self):
         for invoice in self:
             invoice.is_l10npt_vat_enabled = (
