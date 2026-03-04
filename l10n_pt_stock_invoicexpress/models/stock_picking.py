@@ -102,6 +102,12 @@ class StockPicking(models.Model):
         help="Select the type of legal delivery document"
         " to be created by InvoiceXpress.",
     )
+    invoicexpress_transport_date = fields.Datetime(
+        string="InvX Transport Document Date",
+        help="Date for the InvoiceXpress transport document. "
+        "If not set, the shipping date will be used.",
+        copy=False,
+    )
 
     def _send_confirmation_email(self):
         # Only send Delivery emails if the InvoiceXpress checkbox is selected
@@ -120,31 +126,16 @@ class StockPicking(models.Model):
         lines = self.move_ids_without_package.filtered("quantity")
         # Ensure Taxes are created on InvoiceXpress
         lines.mapped("sale_line_id.tax_id").action_invoicexpress_tax_create()
-        items = []
-        for line in lines:
-            tax = line.sale_line_id.tax_id[:1]
-            # tax_detail = {"name": tax.name, "value": tax.amount} if tax else {}
-            tax_detail = {"name": tax.name} if tax else {}
-            items.append(
-                {
-                    "name": line.product_id.default_code
-                    or line.product_id.display_name,
-                    "description": line.product_id.name or "",  # line.name for SO desc
-                    # TODO: add an option to allow having the prices set?
-                    "unit_price": 0.0,  # line.sale_line_id.price_unit,
-                    "quantity": line.quantity,
-                    "discount": line.sale_line_id.discount,
-                    "tax": tax_detail,
-                }
-            )
-        return items
+        return [line._prepare_invoicexpress_line_vals() for line in lines]
 
     def _prepare_invoicexpress_vals(self):
         self.ensure_one()
-        shipping_date = fields.Datetime.add(fields.Datetime.now(), minutes=5)
+        shipping_date = self.invoicexpress_transport_date or fields.Datetime.add(
+            fields.Datetime.now(), minutes=5
+        )
         if shipping_date < fields.Datetime.now():
             raise exceptions.ValidationError(
-                _("Scheduled Date should be bigger then current datetime!")
+                _("Scheduled Date should be later than the current datetime!")
             )
         customer = self.partner_id.commercial_partner_id
         customer_vals = customer.set_invoicexpress_contact()
@@ -161,10 +152,11 @@ class StockPicking(models.Model):
         item_vals = self._prepare_invoicexpress_lines()
         return {
             doctype: {
-                "date": shipping_date.strftime("%d/%m/%Y"),
-                "due_date": (
-                    self.l10npt_transport_doc_due_date or shipping_date
-                ).strftime("%d/%m/%Y"),
+                # Document date is always today
+                # "date": shipping_date.strftime("%d/%m/%Y"),
+                "date": fields.Date.today().strftime("%d/%m/%Y"),
+                "due_date": self.l10npt_transport_doc_due_date.strftime("%d/%m/%Y"),
+                # Expected loading datetime can be in the future
                 "loaded_at": format_datetime(
                     self.env, shipping_date, dt_format="dd/MM/yyyy HH:mm:ss"
                 ),
@@ -179,9 +171,10 @@ class StockPicking(models.Model):
 
     def _update_invoicexpress_status(self):
         inv_xpress_link_name = _("View Document")
-        inv_xpress_link = _(
-            "<a class='btn btn-info mr-2' target='new' href={link}>{name}</a>"
-        ).format(link=self.invoicexpress_permalink, name=inv_xpress_link_name)
+        inv_xpress_link = (
+            f"<a class='btn btn-info mr-2' target='new' "
+            f"href='{self.invoicexpress_permalink}'>{inv_xpress_link_name}</a>"
+        )
         msg = _(
             "InvoiceXpress record has been created for this delivery order:<ul>"
             "<li>Number: {inv_xpress_num}</li>"
@@ -199,6 +192,17 @@ class StockPicking(models.Model):
         """
         InvoiceXpress = self.env["account.invoicexpress"]
         for delivery in self.filtered("can_invoicexpress"):
+            # If picking is done and already has an InvoiceXpress document,
+            # clear the previous data before creating a new one
+            if delivery.state == "done" and delivery.invoicexpress_id:
+                delivery.write(
+                    {
+                        "invoicexpress_id": False,
+                        "invoicexpress_number": False,
+                        "invoicexpress_permalink": False,
+                    }
+                )
+
             payload = delivery._prepare_invoicexpress_vals()
             doctype = delivery.invoicexpress_doc_type
             response = InvoiceXpress.call(
@@ -290,6 +294,7 @@ class StockPicking(models.Model):
                 raise exceptions.UserError(_("Please set the country of the partner."))
             to_invoicexpress = self.filtered(
                 lambda x: x.partner_id.country_id.code == "PT"
+                and x.picking_type_id.invoicexpress_auto_create
             )
             to_invoicexpress.action_create_invoicexpress_delivery()
             to_invoicexpress.action_send_invoicexpress_delivery(ignore_no_config=True)

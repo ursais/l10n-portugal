@@ -24,3 +24,15 @@ class StockPickingType(models.Model):
         help="Select the type of legal delivery document"
         " to be created by InvoiceXpress. If unset",
     )
+    invoicexpress_auto_create = fields.Boolean(
+        string="Auto-create InvoiceXpress Document",
+        default=True,
+        help="If checked, the InvoiceXpress document will be "
+        "automatically created when the picking is validated.",
+    )
+    invoicexpress_include_uom = fields.Boolean(
+        string="Include UoM in Descriptions",
+        default=False,
+        help="If checked, the Unit of Measure will be included "
+        "in the line descriptions sent to InvoiceXpress.",
+    )
