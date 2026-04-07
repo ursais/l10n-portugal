@@ -14,12 +14,6 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: l10n_pt_stock_invoicexpress
-#. odoo-python
-#: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-msgid "<a class='btn btn-info mr-2' target='new' href={link}>{name}</a>"
-msgstr ""
-
-#. module: l10n_pt_stock_invoicexpress
 #: model:mail.template,body_html:l10n_pt_stock_invoicexpress.email_template_delivery
 msgid ""
 "<p>\n"
@@ -38,6 +32,18 @@ msgid ""
 "            </t>\n"
 "</p>\n"
 "        "
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model_terms:ir.ui.view,arch_db:l10n_pt_stock_invoicexpress.view_stock_picking_form
+msgid ""
+"Are you sure you want to recreate the InvoiceXpress document? This will "
+"replace the current document with a new one."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,field_description:l10n_pt_stock_invoicexpress.field_stock_picking_type__invoicexpress_auto_create
+msgid "Auto-create InvoiceXpress Document"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
@@ -63,6 +69,13 @@ msgstr ""
 #. module: l10n_pt_stock_invoicexpress
 #: model:ir.model,name:l10n_pt_stock_invoicexpress.model_res_partner
 msgid "Contact"
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,help:l10n_pt_stock_invoicexpress.field_stock_picking__invoicexpress_transport_date
+msgid ""
+"Date for the InvoiceXpress transport document. If not set, the shipping date"
+" will be used."
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
@@ -101,10 +114,29 @@ msgid "Guia de Transporte / Transport"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,help:l10n_pt_stock_invoicexpress.field_stock_picking_type__invoicexpress_auto_create
+msgid ""
+"If checked, the InvoiceXpress document will be automatically created when "
+"the picking is validated."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,help:l10n_pt_stock_invoicexpress.field_stock_picking_type__invoicexpress_include_uom
+msgid ""
+"If checked, the Unit of Measure will be included in the line descriptions "
+"sent to InvoiceXpress."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
 #: model:ir.model.fields,help:l10n_pt_stock_invoicexpress.field_stock_picking__invoicexpress_send_email
 msgid ""
 "If unchecked, both the InvoiceXpress email and the Delivery email won't be "
 "sent."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,field_description:l10n_pt_stock_invoicexpress.field_stock_picking_type__invoicexpress_include_uom
+msgid "Include UoM in Descriptions"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
@@ -115,6 +147,11 @@ msgstr ""
 #. module: l10n_pt_stock_invoicexpress
 #: model:ir.model.fields,field_description:l10n_pt_stock_invoicexpress.field_stock_picking__invoicexpress_send_email
 msgid "InvX Send Email"
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,field_description:l10n_pt_stock_invoicexpress.field_stock_picking__invoicexpress_transport_date
+msgid "InvX Transport Document Date"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
@@ -173,6 +210,11 @@ msgid "License Plate"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
+#: model_terms:ir.ui.view,arch_db:l10n_pt_stock_invoicexpress.view_stock_picking_form
+msgid "New Legal Document"
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
 #: model:ir.model.fields.selection,name:l10n_pt_stock_invoicexpress.selection__stock_picking_type__invoicexpress_doc_type__none
 msgid "No InvoiceXpress document"
 msgstr ""
@@ -211,7 +253,7 @@ msgstr ""
 #. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-msgid "Scheduled Date should be bigger then current datetime!"
+msgid "Scheduled Date should be later than the current datetime!"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
@@ -231,6 +273,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
 msgid "Something went wrong: the InvoiceXpress response looks empty."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model,name:l10n_pt_stock_invoicexpress.model_stock_move
+msgid "Stock Move"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
