@@ -11,10 +11,14 @@
                 <field name="can_invoicexpress_email" invisible="1" />
                 <field name="invoicexpress_doc_type" />
                 <field
+                    name="invoicexpress_transport_date"
+                    invisible="not can_invoicexpress"
+                />
+                <field name="license_plate" invisible="not can_invoicexpress" />
+                <field
                     name="invoicexpress_send_email"
                     invisible="not can_invoicexpress_email"
                 />
-                <field name="license_plate" invisible="not can_invoicexpress_email" />
             </field>
             <xpath expr="//notebook//page[@name='note']" position="after">
                 <page
@@ -24,27 +28,25 @@
                     groups="base.group_no_one"
                 >
                     <group>
-                        <field name="invoicexpress_id" />
+                        <field name="invoicexpress_number" />
                         <field name="invoicexpress_permalink" widget="url" />
+                        <field name="invoicexpress_id" groups="base.group_no_one" />
                     </group>
                 </page>
             </xpath>
             <xpath expr="//button[@name='do_print_picking']" position="before">
-                <!-- This can be uncommented to aid debugging
-                <button
-                    name="action_create_invoicexpress_delivery"
-                    string="Create InvoiceXpress"
-                    type="object"
-                    invisible="invoicexpress_id or state not in ('assigned','done') or not can_invoicexpress"
-                    groups="base.group_no_one"
-                />
-                -->
-                <field name="invoicexpress_id" invisible="True" />
                 <button
                     name="action_send_invoicexpress_delivery"
                     string="InvoiceXpress Email"
                     type="object"
                     invisible="not can_invoicexpress_email or not invoicexpress_id"
+                />
+                <button
+                    name="action_create_invoicexpress_delivery"
+                    string="New Legal Document"
+                    type="object"
+                    invisible="not can_invoicexpress or state not in ('done')"
+                    confirm="Are you sure you want to recreate the InvoiceXpress document? This will replace the current document with a new one."
                 />
             </xpath>
         </field>

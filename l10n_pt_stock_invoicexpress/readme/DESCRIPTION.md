@@ -9,6 +9,17 @@ See
 <https://github.com/OCA/l10n-portugal/blob/14.0/l10n_pt_account_invoicexpress/README.rst>
 for more details.
 
+
+**Update March/2026:**
+
+- Can set a specific loading date on the Picking Document.
+  For example, to allow preparing transport document on the day before.
+- Can re-create the transport document after confirming the Picking.
+  For example, to create a new document for the same shipment if the 
+  original one ended not happening and its dates are obsolete.
+- Use the pikcing line description on the transport document.
+- Option to include UoM in line descriptions, configured on the Operation Type.
+
 **UPDATE November/2021:**
 
 Deliveries:
