@@ -17,31 +17,36 @@ msgstr ""
 "X-Generator: Weblate 5.10.4\n"
 
 #. module: l10n_pt_stock_invoicexpress
-#. odoo-python
-#: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
-msgid "<a class='btn btn-info mr-2' target='new' href=%(link)s>%(name)s</a>"
-msgstr ""
-
-#. module: l10n_pt_stock_invoicexpress
 #: model:mail.template,body_html:l10n_pt_stock_invoicexpress.email_template_delivery
 msgid ""
 "<p>\n"
 "Olá,\n"
-"<br>\n"
-"Enviamos em anexo a Guia de Trasporte <t t-out=\"object.name\"></t>\n"
-"<t t-if=\"object.ref\">\n"
-"    relativa à sua encomenda <t t-out=\"object.ref\"></t>\n"
+"<br/>\n"
+"Enviamos em anexo a Guia de Trasporte <t t-out=\"object.name\"/>\n"
+"<t t-if=\"object.origin\">\n"
+"    relativa à sua encomenda <t t-out=\"object.origin\"/>\n"
 "</t>\n"
 ".\n"
-"<br><br>\n"
+"<br/><br/>\n"
 "Obrigado\n"
 "<t t-if=\"user.signature\">\n"
-"    <br>\n"
-"    <t t-out=\"user.signature or ''\"></t>\n"
-"</t>\n"
+"                <br/>\n"
+"                <t t-out=\"user.signature or ''\"/>\n"
+"            </t>\n"
 "</p>\n"
 "        "
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model_terms:ir.ui.view,arch_db:l10n_pt_stock_invoicexpress.view_stock_picking_form
+msgid ""
+"Are you sure you want to recreate the InvoiceXpress document? This will "
+"replace the current document with a new one."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,field_description:l10n_pt_stock_invoicexpress.field_stock_picking_type__invoicexpress_auto_create
+msgid "Auto-create InvoiceXpress Document"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
@@ -70,9 +75,15 @@ msgid "Contact"
 msgstr "Contacto"
 
 #. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,help:l10n_pt_stock_invoicexpress.field_stock_picking__invoicexpress_transport_date
+msgid ""
+"Date for the InvoiceXpress transport document. If not set, the shipping date "
+"will be used."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
 msgid "Delivery %s is not registered in InvoiceXpress yet."
 msgstr "Entrega %s ainda não está registada no InvoiceXpress."
 
@@ -84,12 +95,9 @@ msgstr "Devolução"
 #. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
 msgid ""
-"Email sent by InvoiceXpress:<ul><li>To: %(email)s/li><li>Cc: %(cc)s</li></ul>"
+"Email sent by InvoiceXpress:<ul><li>To: {email}/li><li>Cc: {cc}</li></ul>"
 msgstr ""
-"Email enviado pelo InvoiceXpress:<ul><li>To: %(email)s/li><li>Cc: "
-"%(cc)s</li></ul>"
 
 #. module: l10n_pt_stock_invoicexpress
 #: model:mail.template,subject:l10n_pt_stock_invoicexpress.email_template_delivery
@@ -109,10 +117,29 @@ msgid "Guia de Transporte / Transport"
 msgstr "Guia de Transporte"
 
 #. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,help:l10n_pt_stock_invoicexpress.field_stock_picking_type__invoicexpress_auto_create
+msgid ""
+"If checked, the InvoiceXpress document will be automatically created when "
+"the picking is validated."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,help:l10n_pt_stock_invoicexpress.field_stock_picking_type__invoicexpress_include_uom
+msgid ""
+"If checked, the Unit of Measure will be included in the line descriptions "
+"sent to InvoiceXpress."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
 #: model:ir.model.fields,help:l10n_pt_stock_invoicexpress.field_stock_picking__invoicexpress_send_email
 msgid ""
 "If unchecked, both the InvoiceXpress email and the Delivery email won't be "
 "sent."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,field_description:l10n_pt_stock_invoicexpress.field_stock_picking_type__invoicexpress_include_uom
+msgid "Include UoM in Descriptions"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
@@ -123,6 +150,11 @@ msgstr ""
 #. module: l10n_pt_stock_invoicexpress
 #: model:ir.model.fields,field_description:l10n_pt_stock_invoicexpress.field_stock_picking__invoicexpress_send_email
 msgid "InvX Send Email"
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model.fields,field_description:l10n_pt_stock_invoicexpress.field_stock_picking__invoicexpress_transport_date
+msgid "InvX Transport Document Date"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
@@ -160,11 +192,12 @@ msgstr "Número InvoiceXpress"
 #. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
 msgid ""
 "InvoiceXpress record has been created for this delivery order:"
-"<ul><li>Number: %(inv_xpress_num)s</li><li>%(inv_xpress_link)s</li></ul>"
+"<ul><li>Number: {inv_xpress_num}</li><li>{inv_xpress_link}</li></ul>"
 msgstr ""
+"Registo InvoiceXpress foi criado para esta entrega:<ul><li>Número: "
+"{inv_xpress_num}</li><li>{inv_xpress_link}</li></ul>"
 
 #. module: l10n_pt_stock_invoicexpress
 #: model:mail.template,name:l10n_pt_stock_invoicexpress.email_template_delivery
@@ -182,6 +215,11 @@ msgid "License Plate"
 msgstr "Matrícula"
 
 #. module: l10n_pt_stock_invoicexpress
+#: model_terms:ir.ui.view,arch_db:l10n_pt_stock_invoicexpress.view_stock_picking_form
+msgid "New Legal Document"
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
 #: model:ir.model.fields.selection,name:l10n_pt_stock_invoicexpress.selection__stock_picking_type__invoicexpress_doc_type__none
 msgid "No InvoiceXpress document"
 msgstr ""
@@ -189,14 +227,12 @@ msgstr ""
 #. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
 msgid "No address to send delivery document email to."
 msgstr "Falta o endereço para onde enviar o email com a Guia de Transporte."
 
 #. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
 msgid "None"
 msgstr "Nenhum"
 
@@ -208,7 +244,6 @@ msgstr ""
 #. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
 msgid ""
 "Please configure the InvoiceXpress Delivery email template at Settings > "
 "General Setting, InvoiceXpress section"
@@ -219,9 +254,14 @@ msgstr ""
 #. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
-msgid "Scheduled Date should be bigger then current datetime!"
-msgstr "Data prevista deve ser posterior à data e hora atual!"
+msgid "Please set the country of the partner."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#. odoo-python
+#: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
+msgid "Scheduled Date should be later than the current datetime!"
+msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
 #: model:ir.model.fields,help:l10n_pt_stock_invoicexpress.field_stock_picking__invoicexpress_doc_type
@@ -239,8 +279,12 @@ msgstr ""
 #. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
 msgid "Something went wrong: the InvoiceXpress response looks empty."
+msgstr ""
+
+#. module: l10n_pt_stock_invoicexpress
+#: model:ir.model,name:l10n_pt_stock_invoicexpress.model_stock_move
+msgid "Stock Move"
 msgstr ""
 
 #. module: l10n_pt_stock_invoicexpress
@@ -266,22 +310,25 @@ msgstr ""
 #. module: l10n_pt_stock_invoicexpress
 #. odoo-python
 #: code:addons/l10n_pt_stock_invoicexpress/models/stock_picking.py:0
-#, python-format
 msgid "View Document"
 msgstr ""
+
+#, python-format
+#~ msgid ""
+#~ "Email sent by InvoiceXpress:<ul><li>To: %(email)s/li><li>Cc: %(cc)s</li></"
+#~ "ul>"
+#~ msgstr ""
+#~ "Email enviado pelo InvoiceXpress:<ul><li>To: %(email)s/li><li>Cc: %(cc)s</"
+#~ "li></ul>"
+
+#, python-format
+#~ msgid "Scheduled Date should be bigger then current datetime!"
+#~ msgstr "Data prevista deve ser posterior à data e hora atual!"
 
 #, python-format
 #~ msgid "Email sent by InvoiceXpress:<ul><li>To: {}</li><li>Cc: {}</li></ul>"
 #~ msgstr ""
 #~ "Email enviado pelo InvoiceXpress:<ul><li>Para: {}</li><li>Cc: {}</li></ul>"
-
-#, python-format
-#~ msgid ""
-#~ "InvoiceXpress record has been created for this delivery order:"
-#~ "<ul><li>Number: {inv_xpress_num}</li><li>{inv_xpress_link}</li></ul>"
-#~ msgstr ""
-#~ "Registo InvoiceXpress foi criado para esta entrega:<ul><li>Número: "
-#~ "{inv_xpress_num}</li><li>{inv_xpress_link}</li></ul>"
 
 #~ msgid ""
 #~ "<p>\n"
