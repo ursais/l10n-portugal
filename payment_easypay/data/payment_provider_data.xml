@@ -3,7 +3,6 @@
     <record id="payment_provider_easypay" model="payment.provider">
         <field name="name">EasyPay</field>
         <field name="code">easypay</field>
-        <field name="redirect_form_view_id" ref="redirect_form" />
         <field name="module_id" ref="base.module_payment_easypay" />
     </record>
 </odoo>

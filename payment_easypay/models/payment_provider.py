@@ -37,11 +37,6 @@ class PaymentProvider(models.Model):
             [("code", "=", "cc")]
         ),
     )
-    easypay_use_checkout = fields.Boolean(
-        string="Use Checkout",
-        default=False,
-        help="Use EasyPay Checkout for a better user experience",
-    )
     easypay_payment_type = fields.Selection(
         [
             ("single", "Single Payment"),
@@ -263,31 +258,6 @@ class PaymentProvider(models.Model):
             "phone": tx_sudo.partner_phone or "",
             "key": str(tx_sudo.partner_id.id),
         }
-
-    def _easypay_create_single_payment(self, tx_sudo):
-        """Create EasyPay single payment for the transaction."""
-        payment_methods = self.easypay_payment_method_ids
-        if not payment_methods:
-            payment_methods = self.env["easypay.payment.method"].search(
-                [("code", "=", "cc")]
-            )
-        method_code = payment_methods[0].code
-
-        return_url = f"{tx_sudo.provider_id.get_base_url()}/payment/easypay/return"
-        payload = {
-            "type": const.PAYMENT_TYPE_SALE,
-            "method": method_code,
-            "value": tx_sudo.amount,
-            "currency": tx_sudo.currency_id.name,
-            "key": tx_sudo.reference,
-            "capture": {
-                "descriptive": tx_sudo.reference,
-                "transaction_key": tx_sudo.reference,
-            },
-            "customer": self._build_customer_data(tx_sudo),
-            "return_url": return_url,
-        }
-        return self._easypay_make_request("/2.0/single", payload)
 
     def action_easypay_test_connection(self):
         """Test connection to EasyPay API using ping endpoint."""

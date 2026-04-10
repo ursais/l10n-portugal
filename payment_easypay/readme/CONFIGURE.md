@@ -17,8 +17,6 @@ the EasyPay dashboard.
     - **API Key** — from your EasyPay dashboard (admin-only field)
     - **Payment Methods** — select the methods to offer (Credit/Debit Card,
       Multibanco, MB WAY, etc.)
-    - **Use Checkout** — enable to show an inline payment form; disable to
-      redirect customers to EasyPay's hosted page
     - **Payment Type** — `Single` for one-time payments; `Frequent` to save
       payment details as a token for repeat charges (e.g. subscriptions)
 4.  Set the provider **State**:

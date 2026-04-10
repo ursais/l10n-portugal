@@ -17,20 +17,6 @@ paymentForm.include({
             return await this._super(...arguments);
         }
 
-        // Check if this is Single Payment flow (has payment URL) or Checkout flow (has manifest)
-        if (processingValues.easypay_payment_url) {
-            return await this._super(...arguments);
-        }
-
-        if (!processingValues.easypay_use_checkout) {
-            this._displayErrorDialog(
-                _t("Configuration Error"),
-                _t("Missing payment configuration. Please try again.")
-            );
-            this._enableButton();
-            return;
-        }
-
         try {
             // Create checkout session now (when user actually pays) using JSON-RPC
             const response_data = await rpc(

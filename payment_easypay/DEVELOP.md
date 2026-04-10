@@ -16,37 +16,32 @@ charges)
 
 ### Core Components
 
-| File                                | Responsibility                                                   |
-| ----------------------------------- | ---------------------------------------------------------------- |
-| `models/payment_provider.py`        | Provider config, EasyPay API calls, payload builders             |
-| `models/payment_transaction.py`     | Transaction state machine, token creation, refund/capture/void   |
-| `controllers/checkout_session.py`   | JSON-RPC: creates EasyPay checkout session on Pay click          |
-| `controllers/checkout_page.py`      | Serves the dedicated SDK page (`/payment/easypay/checkout`)      |
-| `controllers/main.py`               | Webhook handlers, single-payment return, checkout success/cancel |
-| `static/src/js/payment_form.esm.js` | Odoo payment form override — initiates session creation          |
-| `static/src/js/checkout.js`         | EasyPay SDK initialization and event handlers                    |
-| `views/checkout_template.xml`       | Standalone page template hosting the SDK                         |
-| `const.py`                          | API URLs, status mapping, payment method codes                   |
+| File                                | Responsibility                                                 |
+| ----------------------------------- | -------------------------------------------------------------- |
+| `models/payment_provider.py`        | Provider config, EasyPay API calls, payload builders           |
+| `models/payment_transaction.py`     | Transaction state machine, token creation, refund/capture/void |
+| `controllers/checkout_session.py`   | JSON-RPC: creates EasyPay checkout session on Pay click        |
+| `controllers/checkout_page.py`      | Serves the dedicated SDK page (`/payment/easypay/checkout`)    |
+| `controllers/main.py`               | Webhook handlers, checkout success/cancel, webhooks            |
+| `static/src/js/payment_form.esm.js` | Odoo payment form override — initiates session creation        |
+| `static/src/js/checkout.js`         | EasyPay SDK initialization and event handlers                  |
+| `views/checkout_template.xml`       | Standalone page template hosting the SDK                       |
+| `const.py`                          | API URLs, status mapping, payment method codes                 |
 
 ---
 
-## Payment Flows
+## Payment Flow
 
-### Flow A — Checkout (SDK, recommended)
-
-This is the primary flow when `easypay_use_checkout = True` on the provider.
-
-#### Step 1 — Transaction creation
+### Step 1 — Transaction creation
 
 **User action:** Selects EasyPay on the Odoo payment page and clicks **Pay Now**.
 
 **Odoo:**
 
 - Creates `payment.transaction` record (state: `draft`)
-- Calls `_get_specific_processing_values()` → returns `{"easypay_use_checkout": True}`
 - Renders the standard Odoo payment form
 
-#### Step 2 — Checkout session creation
+### Step 2 — Checkout session creation
 
 **Browser (`payment_form.esm.js`):**
 
@@ -72,7 +67,7 @@ This is the primary flow when `easypay_use_checkout = True` on the provider.
 
 - Redirects to `/payment/easypay/checkout?session_id=...&manifest=...`
 
-#### Step 3 — SDK page
+### Step 3 — SDK page
 
 **Server (`checkout_page.py`):**
 
@@ -89,7 +84,7 @@ This is the primary flow when `easypay_use_checkout = True` on the provider.
 - `testing` flag derived from `data.apiUrl` (true if URL contains "test" or is empty)
 - Payment form rendered inline in `#easypay-checkout` div
 
-#### Step 4 — User pays
+### Step 4 — User pays
 
 **Synchronous methods (card):**
 
@@ -123,7 +118,7 @@ This is the primary flow when `easypay_use_checkout = True` on the provider.
 - Future charges via `_send_payment_request()` →
   `POST /2.0/capture/{token.provider_ref}`
 
-#### Step 5 — SDK event handlers
+### Step 5 — SDK event handlers
 
 ```javascript
 startCheckout(manifest, {
@@ -154,7 +149,7 @@ startCheckout(manifest, {
 > ⚠️ Sessions expire after **30 minutes**. `checkout-expired` triggers `history.back()`
 > so the user can re-click Pay, which creates a fresh session.
 
-#### Step 6 — `/checkout/success` handler
+### Step 6 — `/checkout/success` handler
 
 **Browser:** redirects to
 `/payment/easypay/checkout/success?id={session_id}&method={method}&status={status}`
@@ -173,7 +168,7 @@ startCheckout(manifest, {
    - Unrecognised status while in `draft` → `pending` (webhook will resolve)
 6. Redirects to `/payment/status`
 
-#### Step 7 — Webhooks (async confirmation)
+### Step 7 — Webhooks (async confirmation)
 
 EasyPay sends POST notifications to:
 
@@ -185,26 +180,11 @@ EasyPay sends POST notifications to:
 
 1. Extracts `id` (payment ID) and `key` (reference) from body
 2. Finds transaction (reference preferred over payment ID)
-3. Selects endpoint: checkout → authorisation → single (in that priority)
+3. Selects endpoint: checkout → authorisation (in that priority)
 4. `GET` full payment data from selected endpoint
 5. If frequent: `tx._easypay_create_token(...)` (idempotent)
 6. `tx._handle_notification_data(...)` → updates state
 7. Always returns HTTP 200 (EasyPay retries on non-200)
-
----
-
-### Flow B — Single Payment (redirect, non-checkout)
-
-Used when `easypay_use_checkout = False`.
-
-1. `_get_specific_processing_values()` calls `POST /2.0/single` immediately
-2. Stores `easypay_payment_id` and returns `easypay_payment_url` (EasyPay hosted page
-   URL)
-3. Odoo renders a redirect form (`payment_easypay_templates.xml`) — auto-submits GET to
-   the payment URL
-4. User completes payment on EasyPay hosted page
-5. EasyPay redirects to `/payment/easypay/return?key={reference}&id={payment_id}`
-6. Server: `GET /2.0/single/{payment_id}` → `_handle_notification_data`
 
 ---
 
@@ -231,8 +211,7 @@ Used when `easypay_use_checkout = False`.
 
 ### Refund (`_send_refund_request`)
 
-- If `easypay_transaction_id` missing: fetches it via `GET /2.0/checkout/{id}` or
-  `GET /2.0/single/{id}` first
+- If `easypay_transaction_id` missing: fetches it via `GET /2.0/checkout/{id}` first
 - `POST /2.0/capture/{easypay_transaction_id}/refund` with `{value}`
 - Creates child refund transaction
 
@@ -260,27 +239,25 @@ Used when `easypay_use_checkout = False`.
 
 ### Transaction Fields
 
-| Field                     | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `easypay_payment_id`      | EasyPay payment ID (used for void, single-flow lookup) |
-| `easypay_transaction_id`  | Capture ID (used for refund and manual capture)        |
-| `easypay_checkout_id`     | Checkout session ID                                    |
-| `easypay_payment_method`  | Method selected by user (`cc`, `mb`, `mbw`, …)         |
-| `easypay_capture_status`  | Raw capture status from EasyPay                        |
-| `easypay_payment_details` | Full JSON response (audit trail)                       |
-| `easypay_payment_url`     | Redirect URL (single-payment flow only)                |
-| `token_id`                | Linked `payment.token` (frequent flow only)            |
+| Field                     | Description                                     |
+| ------------------------- | ----------------------------------------------- |
+| `easypay_payment_id`      | EasyPay payment ID (used for void)              |
+| `easypay_transaction_id`  | Capture ID (used for refund and manual capture) |
+| `easypay_checkout_id`     | Checkout session ID                             |
+| `easypay_payment_method`  | Method selected by user (`cc`, `mb`, `mbw`, …)  |
+| `easypay_capture_status`  | Raw capture status from EasyPay                 |
+| `easypay_payment_details` | Full JSON response (audit trail)                |
+| `token_id`                | Linked `payment.token` (frequent flow only)     |
 
 ### Provider Fields
 
-| Field                        | Description                                       |
-| ---------------------------- | ------------------------------------------------- |
-| `easypay_account_id`         | EasyPay account identifier                        |
-| `easypay_api_key`            | API key (admin-only, encrypted)                   |
-| `easypay_payment_method_ids` | Enabled payment methods                           |
-| `easypay_use_checkout`       | `True` = checkout flow, `False` = single/redirect |
-| `easypay_payment_type`       | `"single"` or `"frequent"`                        |
-| `easypay_webhook_base_url`   | Computed — base URL shown in provider form        |
+| Field                        | Description                                |
+| ---------------------------- | ------------------------------------------ |
+| `easypay_account_id`         | EasyPay account identifier                 |
+| `easypay_api_key`            | API key (admin-only, encrypted)            |
+| `easypay_payment_method_ids` | Enabled payment methods                    |
+| `easypay_payment_type`       | `"single"` or `"frequent"`                 |
+| `easypay_webhook_base_url`   | Computed — base URL shown in provider form |
 
 ---
 
@@ -292,8 +269,6 @@ Used when `easypay_use_checkout = False`.
 | ------------------------------ | ------ | ------------------------------------------ |
 | `/2.0/checkout`                | POST   | Create checkout session                    |
 | `/2.0/checkout/{id}`           | GET    | Fetch checkout details                     |
-| `/2.0/single`                  | POST   | Create single payment                      |
-| `/2.0/single/{id}`             | GET    | Fetch single payment details               |
 | `/2.0/capture/{id}`            | POST   | Capture frequent payment or manual capture |
 | `/2.0/capture/{id}/refund`     | POST   | Process refund                             |
 | `/2.0/authorisation/{id}/void` | POST   | Void authorised payment                    |
@@ -308,7 +283,6 @@ Used when `easypay_use_checkout = False`.
 | `/payment/easypay/checkout`                | Serves SDK page                       |
 | `/payment/easypay/checkout/success`        | Post-payment redirect (GET)           |
 | `/payment/easypay/checkout/cancel`         | SDK-triggered cancel (GET)            |
-| `/payment/easypay/return`                  | Single-payment return (GET or POST)   |
 | `/payment/easypay/webhook/generic`         | EasyPay generic webhook (POST)        |
 | `/payment/easypay/webhook/authorisation`   | EasyPay authorisation webhook (POST)  |
 | `/payment/easypay/webhook/transaction`     | EasyPay transaction webhook (POST)    |
@@ -320,11 +294,10 @@ Used when `easypay_use_checkout = False`.
 1. Go to **Accounting → Configuration → Payment Providers**, create or open EasyPay
 2. Set **Account ID** and **API Key** (from EasyPay backoffice)
 3. Select **Payment Methods** to offer
-4. Set **Use Checkout** = enabled (recommended) or disabled (single/redirect flow)
-5. Set **Payment Type**: `single` or `frequent`
-6. Click **Configure Webhooks** — registers all Odoo webhook URLs with EasyPay
+4. Set **Payment Type**: `single` or `frequent`
+5. Click **Configure Webhooks** — registers all Odoo webhook URLs with EasyPay
    automatically via `PATCH /2.0/config`
-7. Click **Test Connection** to verify credentials
+6. Click **Test Connection** to verify credentials
 
 ### Payment Method Codes
 
@@ -414,15 +387,6 @@ Used when `easypay_use_checkout = False`.
 2. Click **Refund** in Odoo
 3. **Expected:** `POST /2.0/capture/{easypay_transaction_id}/refund` called
 4. **Expected:** Child refund transaction created with `easypay_payment_id` set
-
-### Test Case 8 — Single payment flow (non-checkout)
-
-1. Set provider **Use Checkout = disabled**
-2. Proceed to payment
-3. **Expected:** `POST /2.0/single` called during page load, redirect form auto-submits
-4. **Expected:** Redirected to EasyPay hosted page
-5. Complete payment
-6. **Expected:** Redirected to `/payment/easypay/return` → transaction → **Done**
 
 ---
 

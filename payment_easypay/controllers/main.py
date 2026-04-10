@@ -1,7 +1,6 @@
 # Copyright 2025 Open Source Integrators
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 
-import json
 import logging
 
 import werkzeug
@@ -15,7 +14,6 @@ _logger = logging.getLogger(__name__)
 class EasyPayController(http.Controller):
     """Controller to handle EasyPay webhooks and redirects."""
 
-    _return_url = "/payment/easypay/return"
     _generic_webhook_url = "/payment/easypay/webhook/generic"
     _authorisation_webhook_url = "/payment/easypay/webhook/authorisation"
     _transaction_webhook_url = "/payment/easypay/webhook/transaction"
@@ -23,64 +21,6 @@ class EasyPayController(http.Controller):
     def _redirect_to_payment_status(self):
         """Standard redirect to payment status page."""
         return werkzeug.utils.redirect("/payment/status", code=303)
-
-    def _extract_reference(self, data):
-        """Extract transaction reference from data dict or URL args."""
-        return (
-            data.get("key")
-            or data.get("reference")
-            or request.httprequest.args.get("key")
-            or request.httprequest.args.get("reference")
-        )
-
-    @http.route(
-        _return_url,
-        type="http",
-        auth="public",
-        methods=["GET", "POST"],
-        csrf=False,
-        save_session=False,
-    )
-    def easypay_return_from_redirect(self, **data):
-        """Process the return from EasyPay after payment."""
-        # Parse JSON body if POST
-        if (
-            request.httprequest.method == "POST"
-            and request.httprequest.content_type == "application/json"
-        ):
-            try:
-                data = json.loads(request.httprequest.data.decode("utf-8"))
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                _logger.warning("Failed to parse JSON body in return handler")
-                data = {}
-
-        reference = self._extract_reference(data)
-        if reference:
-            tx_sudo = self._find_transaction(None, reference)
-            if tx_sudo:
-                payment_id = data.get("id") or tx_sudo.easypay_payment_id
-                if payment_id:
-                    try:
-                        payment_data = tx_sudo.provider_id._easypay_make_request(
-                            f"/2.0/single/{payment_id}", method="GET"
-                        )
-                    except Exception as e:
-                        _logger.exception(
-                            "Error fetching payment data for return %s: %s",
-                            reference,
-                            e,
-                        )
-                        return self._redirect_to_payment_status()
-                    try:
-                        tx_sudo._handle_notification_data("easypay", payment_data)
-                    except Exception as e:
-                        _logger.exception(
-                            "Error processing notification for return %s: %s",
-                            reference,
-                            e,
-                        )
-
-        return self._redirect_to_payment_status()
 
     @http.route(
         _generic_webhook_url,

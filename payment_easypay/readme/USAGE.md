@@ -2,12 +2,8 @@ Once configured, customers can use EasyPay to make payments:
 
 1.  During checkout, select **EasyPay** as the payment method
 2.  Click **Pay Now**
-3.  Depending on the provider configuration:
-    - **With Checkout** (`Use Checkout` enabled): A secure inline payment
-      form loads. The customer selects a payment method and completes
-      the payment without leaving the site.
-    - **Without Checkout**: The customer is redirected to EasyPay's
-      hosted payment page to complete the payment.
+3.  A secure inline payment form loads. The customer selects a payment
+    method and completes the payment without leaving the site.
 
 ## Payment method behaviour
 

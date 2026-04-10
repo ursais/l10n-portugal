@@ -29,15 +29,10 @@
                         <field name="easypay_webhook_base_url" readonly="1" />
                     </group>
                     <group>
-                        <field name="easypay_use_checkout" />
-                        <field
-                            name="easypay_payment_type"
-                            invisible="easypay_use_checkout == False"
-                        />
+                        <field name="easypay_payment_type" />
                         <field
                             name="easypay_payment_method_ids"
                             widget="many2many_checkboxes"
-                            invisible="easypay_use_checkout == False"
                         />
                     </group>
                 </group>

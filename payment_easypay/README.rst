@@ -68,8 +68,6 @@ format) from the EasyPay dashboard.
    -  **API Key** — from your EasyPay dashboard (admin-only field)
    -  **Payment Methods** — select the methods to offer (Credit/Debit
       Card, Multibanco, MB WAY, etc.)
-   -  **Use Checkout** — enable to show an inline payment form; disable
-      to redirect customers to EasyPay's hosted page
    -  **Payment Type** — ``Single`` for one-time payments; ``Frequent``
       to save payment details as a token for repeat charges (e.g.
       subscriptions)
@@ -127,13 +125,8 @@ Once configured, customers can use EasyPay to make payments:
 
 1. During checkout, select **EasyPay** as the payment method
 2. Click **Pay Now**
-3. Depending on the provider configuration:
-
-   -  **With Checkout** (``Use Checkout`` enabled): A secure inline
-      payment form loads. The customer selects a payment method and
-      completes the payment without leaving the site.
-   -  **Without Checkout**: The customer is redirected to EasyPay's
-      hosted payment page to complete the payment.
+3. A secure inline payment form loads. The customer selects a payment
+   method and completes the payment without leaving the site.
 
 Payment method behaviour
 ------------------------

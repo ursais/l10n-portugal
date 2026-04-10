@@ -1,14 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <!-- Redirect form - Single Payment flow only (Checkout flow uses dedicated page) -->
-    <template id="redirect_form">
-        <t t-if="easypay_payment_url">
-            <form method="get" t-att-action="easypay_payment_url">
-                <input type="hidden" name="redirect" value="1" />
-            </form>
-        </t>
-    </template>
-
     <!-- Payment icon -->
     <template id="easypay_icon" name="EasyPay">
         <span class="payment_icon_easypay">

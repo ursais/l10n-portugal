@@ -58,52 +58,6 @@ class PaymentTransaction(models.Model):
         help="The payment token for frequent payments (tokenization)",
     )
 
-    def _get_specific_processing_values(self, processing_values):
-        """Override of payment to return EasyPay-specific processing values.
-
-        Note: self.ensure_one() from `_get_processing_values`
-
-        :param dict processing_values: The generic processing values of the transaction
-        :return: The dict of provider-specific processing values
-        :rtype: dict
-        """
-        res = super()._get_specific_processing_values(processing_values)
-        if self.provider_code != "easypay":
-            return res
-
-        if self.provider_id.easypay_use_checkout:
-            res.update({"easypay_use_checkout": True})
-        else:
-            # Single Payment flow - redirect to hosted page
-            response = self.provider_id._easypay_create_single_payment(self.sudo())
-            self.easypay_payment_id = response.get("id")
-            payment_url = response.get("method", {}).get("url")
-            if not payment_url:
-                raise ValidationError(
-                    _("EasyPay did not return a payment URL. Please try again.")
-                )
-            res.update({"easypay_payment_url": payment_url})
-        return res
-
-    def _get_specific_rendering_values(self, processing_values):
-        """Override of payment to return EasyPay-specific rendering values.
-
-        Note: self.ensure_one() from `_get_processing_values`
-
-        :param dict processing_values: The generic and specific processing values
-        :return: The dict of provider-specific rendering values
-        :rtype: dict
-        """
-        res = super()._get_specific_rendering_values(processing_values)
-        if self.provider_code != "easypay":
-            return res
-
-        if not self.provider_id.easypay_use_checkout:
-            res.update(
-                {"easypay_payment_url": processing_values.get("easypay_payment_url")}
-            )
-        return res
-
     def _get_tx_from_notification_data(self, provider_code, notification_data):
         """Override of payment to find the transaction based on EasyPay data.
 
@@ -282,39 +236,18 @@ class PaymentTransaction(models.Model):
         self.easypay_transaction_id = response.get("id")
         self._set_done()
 
-    def _easypay_get_payment_details(self):
-        """Fetch payment details from EasyPay API.
-
-        Note: self.ensure_one()
-
-        :return: The payment details
-        :rtype: dict
-        :raise ValidationError: If no payment ID is found
-        """
-        self.ensure_one()
-
-        if not self.easypay_payment_id:
-            raise ValidationError(_("No EasyPay payment ID found for this transaction"))
-
-        endpoint = f"/2.0/single/{self.easypay_payment_id}"
-        return self.provider_id._easypay_make_request(endpoint, method="GET")
-
     def _send_refund_request(self, amount_to_refund=None):
         """Send refund request to EasyPay."""
         if self.provider_code != "easypay":
             return super()._send_refund_request(amount_to_refund=amount_to_refund)
 
         if not self.easypay_transaction_id:
-            if self.easypay_checkout_id:
-                payment_details = self.provider_id._easypay_make_request(
-                    f"/2.0/checkout/{self.easypay_checkout_id}", method="GET"
-                )
-                capture_id = (
-                    payment_details.get("payment", {}).get("capture", {}).get("id")
-                )
-            else:
-                payment_details = self._easypay_get_payment_details()
-                capture_id = payment_details.get("capture", {}).get("id")
+            if not self.easypay_checkout_id:
+                raise ValidationError(_("Cannot refund: No checkout session ID found."))
+            payment_details = self.provider_id._easypay_make_request(
+                f"/2.0/checkout/{self.easypay_checkout_id}", method="GET"
+            )
+            capture_id = payment_details.get("payment", {}).get("capture", {}).get("id")
             self.easypay_transaction_id = capture_id
             if not self.easypay_transaction_id:
                 raise ValidationError(
