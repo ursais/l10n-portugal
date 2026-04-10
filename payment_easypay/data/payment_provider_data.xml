@@ -3,6 +3,7 @@
     <record id="payment_provider_easypay" model="payment.provider">
         <field name="name">EasyPay</field>
         <field name="code">easypay</field>
+        <field name="allow_tokenization" eval="True" />
         <field name="module_id" ref="base.module_payment_easypay" />
     </record>
 </odoo>

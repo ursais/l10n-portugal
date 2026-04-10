@@ -17,8 +17,9 @@ the EasyPay dashboard.
     - **API Key** — from your EasyPay dashboard (admin-only field)
     - **Payment Methods** — select the methods to offer (Credit/Debit Card,
       Multibanco, MB WAY, etc.)
-    - **Payment Type** — `Single` for one-time payments; `Frequent` to save
-      payment details as a token for repeat charges (e.g. subscriptions)
+    - **Allow Saving Payment Methods** — when enabled, logged-in customers
+      can tick "Save my payment details" at checkout to tokenize their card
+      for future charges (e.g. subscriptions). Enabled by default.
 4.  Set the provider **State**:
     - **Test Mode** → uses `https://api.test.easypay.pt` and enables the
       `testing` flag in the SDK automatically

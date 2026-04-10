@@ -251,13 +251,13 @@ EasyPay sends POST notifications to:
 
 ### Provider Fields
 
-| Field                        | Description                                |
-| ---------------------------- | ------------------------------------------ |
-| `easypay_account_id`         | EasyPay account identifier                 |
-| `easypay_api_key`            | API key (admin-only, encrypted)            |
-| `easypay_payment_method_ids` | Enabled payment methods                    |
-| `easypay_payment_type`       | `"single"` or `"frequent"`                 |
-| `easypay_webhook_base_url`   | Computed — base URL shown in provider form |
+| Field                        | Description                                          |
+| ---------------------------- | ---------------------------------------------------- |
+| `easypay_account_id`         | EasyPay account identifier                           |
+| `easypay_api_key`            | API key (admin-only, encrypted)                      |
+| `easypay_payment_method_ids` | Enabled payment methods                              |
+| `allow_tokenization`         | `True` — enables the "Save payment details" checkbox |
+| `easypay_webhook_base_url`   | Computed — base URL shown in provider form           |
 
 ---
 
@@ -294,10 +294,9 @@ EasyPay sends POST notifications to:
 1. Go to **Accounting → Configuration → Payment Providers**, create or open EasyPay
 2. Set **Account ID** and **API Key** (from EasyPay backoffice)
 3. Select **Payment Methods** to offer
-4. Set **Payment Type**: `single` or `frequent`
-5. Click **Configure Webhooks** — registers all Odoo webhook URLs with EasyPay
+4. Click **Configure Webhooks** — registers all Odoo webhook URLs with EasyPay
    automatically via `PATCH /2.0/config`
-6. Click **Test Connection** to verify credentials
+5. Click **Test Connection** to verify credentials
 
 ### Payment Method Codes
 

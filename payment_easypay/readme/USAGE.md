@@ -18,9 +18,9 @@ Once configured, customers can use EasyPay to make payments:
   order remains *Pending* until the payment is confirmed, which may
   take minutes to days. The customer should **not** close the
   confirmation page before noting down the reference.
-- **Frequent (tokenization)**: The customer's payment method is saved
-  as a token for future charges (e.g. subscriptions). No immediate
-  charge is made during setup.
+- **Save payment details (tokenization)**: Logged-in customers can
+  tick *Save my payment details* at checkout. The payment method is
+  saved as a token for future charges (e.g. subscriptions).
 
 ## Test card details (test environment only)
 

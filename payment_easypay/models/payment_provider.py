@@ -37,16 +37,6 @@ class PaymentProvider(models.Model):
             [("code", "=", "cc")]
         ),
     )
-    easypay_payment_type = fields.Selection(
-        [
-            ("single", "Single Payment"),
-            ("frequent", "Frequent Payment (Tokenization)"),
-        ],
-        string="Payment Type",
-        default="single",
-        required_if_provider="easypay",
-        help="Single: One-time payment. Frequent: Save payment details for future use.",
-    )
     easypay_webhook_base_url = fields.Char(
         string="Webhook Base URL",
         help="Base URL that will be used for webhook configuration in EasyPay",
@@ -62,6 +52,7 @@ class PaymentProvider(models.Model):
             {
                 "support_manual_capture": "full_only",
                 "support_refund": "partial",
+                "support_tokenization": True,
             }
         )
         return res
@@ -188,11 +179,11 @@ class PaymentProvider(models.Model):
             )
 
         method_codes = [method.code for method in payment_methods]
-        payment_type = self.easypay_payment_type or "single"
+        is_frequent = tx_sudo.tokenize
 
         # Build base payload
         payload = {
-            "type": [payment_type],
+            "type": ["frequent" if is_frequent else "single"],
             "payment": {
                 "methods": method_codes,
                 "currency": tx_sudo.currency_id.name,
@@ -207,7 +198,7 @@ class PaymentProvider(models.Model):
 
         # Single payments require explicit capture config and payment type
         # Frequent payments must NOT include these fields per EasyPay API docs
-        if payment_type == "single":
+        if not is_frequent:
             payload["payment"]["type"] = const.PAYMENT_TYPE_SALE
             payload["payment"]["capture"] = {
                 "descriptive": tx_sudo.reference,

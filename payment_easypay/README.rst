@@ -68,9 +68,10 @@ format) from the EasyPay dashboard.
    -  **API Key** — from your EasyPay dashboard (admin-only field)
    -  **Payment Methods** — select the methods to offer (Credit/Debit
       Card, Multibanco, MB WAY, etc.)
-   -  **Payment Type** — ``Single`` for one-time payments; ``Frequent``
-      to save payment details as a token for repeat charges (e.g.
-      subscriptions)
+   -  **Allow Saving Payment Methods** — when enabled, logged-in
+      customers can tick "Save my payment details" at checkout to
+      tokenize their card for future charges (e.g. subscriptions).
+      Enabled by default.
 
 4. Set the provider **State**:
 
@@ -142,9 +143,9 @@ Payment method behaviour
    order remains *Pending* until the payment is confirmed, which may
    take minutes to days. The customer should **not** close the
    confirmation page before noting down the reference.
--  **Frequent (tokenization)**: The customer's payment method is saved
-   as a token for future charges (e.g. subscriptions). No immediate
-   charge is made during setup.
+-  **Save payment details (tokenization)**: Logged-in customers can tick
+   *Save my payment details* at checkout. The payment method is saved as
+   a token for future charges (e.g. subscriptions).
 
 Test card details (test environment only)
 -----------------------------------------
