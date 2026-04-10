@@ -21,20 +21,13 @@ paymentForm.include({
 
         // Check if this is Single Payment flow (has payment URL) or Checkout flow (has manifest)
         if (processingValues.easypay_payment_url) {
-            // Single Payment - use standard redirect flow
-            console.log(
-                "EasyPay: Using Single Payment flow - redirecting to:",
-                processingValues.easypay_payment_url
-            );
             return await this._super(...arguments);
         }
 
         // Checkout flow - create session when user pays
-        console.log("EasyPay: Using Checkout flow");
         const apiUrl = processingValues.api_url;
 
         if (!processingValues.easypay_use_checkout || !apiUrl) {
-            console.error("EasyPay: Missing checkout configuration");
             this._displayErrorDialog(
                 _t("Configuration Error"),
                 _t("Missing payment configuration. Please try again.")
@@ -97,37 +90,19 @@ paymentForm.include({
         inlineForm.innerHTML = '<div id="easypay-checkout"></div>';
 
         try {
-            // Debug: Check if SDK script is loading
-            console.log("EasyPay: Checking SDK availability", {
-                hasWindow: typeof window !== "undefined",
-                hasEasypayCheckout: Boolean(window.easypayCheckout),
-                scriptTags: document.querySelectorAll('script[src*="easypay"]').length,
-                scriptsInHead: document.head.querySelectorAll("script").length,
-            });
-
             // Wait for SDK to load from template script tag
             let attempts = 0;
             while (!window.easypayCheckout && attempts < 30) {
                 await new Promise((resolve) => setTimeout(resolve, 100));
                 attempts++;
-
-                if (attempts % 10 === 0) {
-                    console.log(
-                        `EasyPay: Still waiting for SDK... attempt ${attempts}`
-                    );
-                }
             }
 
             // Fallback: Load SDK manually if template failed
             if (!window.easypayCheckout) {
-                console.log("EasyPay: Template script failed, loading SDK manually");
-
                 try {
-                    const response = await fetch(
-                        "https://cdn.easypay.pt/checkout/2.9.1/",
-                        {method: "HEAD"}
-                    );
-                    console.log("EasyPay: CDN is reachable, status:", response.status);
+                    await fetch("https://cdn.easypay.pt/checkout/2.9.1/", {
+                        method: "HEAD",
+                    });
                 } catch (error) {
                     console.error("EasyPay: CDN not reachable", error);
                     this._displayErrorDialog(
@@ -143,18 +118,11 @@ paymentForm.include({
                 await new Promise((resolve, reject) => {
                     const script = document.createElement("script");
                     script.src = "https://cdn.easypay.pt/checkout/2.9.1/";
-                    script.onload = () => {
-                        console.log("EasyPay: Manual SDK load successful");
-                        setTimeout(resolve, 500); // Give it time to initialize
-                    };
-                    script.onerror = (error) => {
-                        console.error("EasyPay: Manual SDK load failed", error);
-                        reject(error);
-                    };
+                    script.onload = () => setTimeout(resolve, 500);
+                    script.onerror = (error) => reject(error);
                     document.head.appendChild(script);
                 });
 
-                // Wait a bit more after manual load
                 attempts = 0;
                 while (!window.easypayCheckout && attempts < 20) {
                     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -163,7 +131,6 @@ paymentForm.include({
             }
 
             if (!window.easypayCheckout) {
-                console.error("EasyPay: SDK completely failed to load");
                 this._displayErrorDialog(
                     _t("Payment Error"),
                     _t(
@@ -174,16 +141,8 @@ paymentForm.include({
                 return;
             }
 
-            console.log("EasyPay: SDK loaded successfully");
-            console.log("EasyPay: Manifest being passed to SDK:", manifest);
-            console.log("EasyPay: Manifest type:", typeof manifest);
-            console.log("EasyPay: Manifest has id:", Boolean(manifest.id));
-            console.log("EasyPay: Manifest has session:", Boolean(manifest.session));
-            console.log("EasyPay: Manifest has config:", Boolean(manifest.config));
-
             // Validate manifest structure before passing to SDK
             if (!manifest || typeof manifest !== "object") {
-                console.error("EasyPay: Invalid manifest structure");
                 this._displayErrorDialog(
                     _t("Configuration Error"),
                     _t("Invalid payment configuration. Please try again.")
@@ -193,7 +152,6 @@ paymentForm.include({
             }
 
             if (!manifest.id || !manifest.session) {
-                console.error("EasyPay: Missing required manifest fields");
                 this._displayErrorDialog(
                     _t("Configuration Error"),
                     _t("Payment session is incomplete. Please try again.")
@@ -202,11 +160,8 @@ paymentForm.include({
                 return;
             }
 
-            console.log("EasyPay: Manifest validation passed, initializing SDK");
-
             // Check if we should use test environment
             const isTestMode = processingValues.api_url.includes("test");
-            console.log("EasyPay: Using test mode:", isTestMode);
 
             // Get user language for checkout localization
             const userLang = document.documentElement.lang || "en";
@@ -215,7 +170,6 @@ paymentForm.include({
                 : userLang.startsWith("es")
                   ? "es_ES"
                   : "en";
-            console.log("EasyPay: Using language:", checkoutLanguage);
 
             // Use SDK according to official documentation
             this.easypayCheckoutInstance = window.easypayCheckout.startCheckout(
@@ -225,24 +179,11 @@ paymentForm.include({
                     testing: isTestMode, // ✅ Correct: Use test environment
                     language: checkoutLanguage,
                     onSuccess: (successInfo) => {
-                        console.log("EasyPay: Payment success", successInfo);
-                        window.location = `/payment/easypay/checkout/success?id=${checkoutId}`;
+                        window.location = `/payment/easypay/checkout/success?id=${checkoutId}&method=${successInfo?.payment?.method || ""}&status=${successInfo?.payment?.status || ""}`;
                     },
                     onError: (error) => {
-                        console.error("EasyPay: Payment error", error);
-                        console.log(
-                            "EasyPay: Full error object:",
-                            JSON.stringify(error, null, 2)
-                        );
-                        console.log("EasyPay: Error code:", error.code);
-                        console.log("EasyPay: Error message:", error.message);
-
-                        // Handle session expiration
+                        // Handle session expiration - must create a new session
                         if (error.code === "checkout-expired") {
-                            console.log("EasyPay: Session expired detected");
-                            console.log(
-                                "EasyPay: NOT redirecting - showing debug info"
-                            );
                             this._displayErrorDialog(
                                 _t("Session Expired"),
                                 _t("Payment session has expired. Please try again.")
@@ -250,7 +191,6 @@ paymentForm.include({
                             this._enableButton();
                             return;
                         }
-
                         this._displayErrorDialog(
                             _t("Payment Error"),
                             _t(
@@ -260,9 +200,14 @@ paymentForm.include({
                         );
                         this._enableButton();
                     },
+                    onPaymentError: (error) => {
+                        // Recoverable error - user can retry, no action needed from Odoo side
+                        // The SDK keeps the form open and lets the user retry
+                        console.warn("EasyPay: Recoverable payment error", error.code);
+                    },
                     onClose: () => {
-                        console.log("EasyPay: Checkout closed");
-                        window.location = `/payment/easypay/checkout/cancel?id=${checkoutId}`;
+                        // User closed the form - redirect to standard payment status page
+                        window.location = "/payment/status";
                     },
                 }
             );

@@ -34,6 +34,21 @@ class PaymentTransaction(models.Model):
         help="The URL to redirect the customer to complete payment",
         readonly=True,
     )
+    easypay_payment_method = fields.Char(
+        string="EasyPay Payment Method",
+        help="The payment method selected by customer (cc, mb, mbw, etc.)",
+        readonly=True,
+    )
+    easypay_capture_status = fields.Char(
+        string="EasyPay Capture Status",
+        help="The capture status (paid, pending, authorised, etc.)",
+        readonly=True,
+    )
+    easypay_payment_details = fields.Json(
+        string="EasyPay Payment Details",
+        help="Full payment details from EasyPay webhook",
+        readonly=True,
+    )
     token_id = fields.Many2one(
         string="Payment Token",
         comodel_name="payment.token",
@@ -163,9 +178,23 @@ class PaymentTransaction(models.Model):
             "status"
         )
 
+        # Extract payment method and capture status from checkout data
+        payment_data = notification_data.get("payment", {})
+        payment_method = payment_data.get("method")
+        capture_status = payment_data.get("status") or status
+
         # Update transaction with EasyPay data
         if payment_id and not self.easypay_payment_id:
             self.easypay_payment_id = payment_id
+
+        # Store payment method and capture status
+        if payment_method:
+            self.easypay_payment_method = payment_method
+        if capture_status:
+            self.easypay_capture_status = capture_status
+
+        # Store full payment details for reference
+        self.easypay_payment_details = notification_data
 
         # Map 'paid' status to 'success' for consistency
         if status == "paid":

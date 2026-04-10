@@ -31,6 +31,10 @@
                     <group>
                         <field name="easypay_use_checkout" />
                         <field
+                            name="easypay_payment_type"
+                            invisible="easypay_use_checkout == False"
+                        />
+                        <field
                             name="easypay_payment_method_ids"
                             widget="many2many_checkboxes"
                             invisible="easypay_use_checkout == False"

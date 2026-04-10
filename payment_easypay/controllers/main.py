@@ -234,10 +234,24 @@ class EasyPayController(http.Controller):
         if not tx_sudo:
             return self._redirect_to_payment_status()
 
+        # Store client-side hints from onSuccess callback as early values
+        if data.get("method"):
+            tx_sudo.easypay_payment_method = data["method"]
+        if data.get("status"):
+            tx_sudo.easypay_capture_status = data["status"]
+
         try:
             payment_data = tx_sudo.provider_id._easypay_make_request(
                 f"/2.0/checkout/{tx_sudo.easypay_checkout_id}", method="GET"
             )
+
+            # Server-side data takes precedence over client-side hints
+            payment_info = payment_data.get("payment", {})
+            if payment_info:
+                tx_sudo.easypay_payment_method = payment_info.get("method")
+                tx_sudo.easypay_capture_status = payment_info.get("status")
+                tx_sudo.easypay_payment_details = payment_data
+
             tx_sudo._handle_notification_data("easypay", payment_data)
         except Exception as e:
             _logger.exception(

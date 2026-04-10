@@ -14,6 +14,7 @@
         "security/ir.model.access.csv",
         "views/payment_easypay_templates.xml",
         "views/payment_provider_views.xml",
+        "views/payment_transaction_views.xml",
         "views/checkout_template.xml",
         "data/payment_provider_data.xml",
         "data/easypay_payment_method_data.xml",
