@@ -2,287 +2,331 @@
 
 ## Overview
 
-This module provides integration between Odoo and EasyPay Checkout, a pre-built payment
-form that handles the entire payment flow including customer information collection,
-payment method selection, invoking payment APIs, and displaying payment feedback.
+This module integrates Odoo with EasyPay Checkout — a pre-built payment form that
+handles customer information collection, payment method selection, and payment
+processing.
 
 **Supported payment methods:** Credit/Debit Cards, MB WAY, Multibanco, SEPA Direct
 Debit, Virtual IBAN, Apple Pay, Google Pay, Samsung Pay
 
-**Supported payment types:** Single, Frequent (tokenization), Subscription
+**Supported payment types:** Single (one-time), Frequent (tokenization for repeat
+charges)
 
 ## Architecture
 
 ### Core Components
 
-- **Payment Provider** (`models/payment_provider.py`) - Provider configuration, API
-  integration, and checkout session creation
-- **Payment Transaction** (`models/payment_transaction.py`) - Transaction handling and
-  state management
-- **Controllers** (`controllers/`) - Webhook handling and checkout endpoints
-- **Custom Payment Methods** (`models/easypay_payment_method.py`) - EasyPay-specific
-  payment methods (cc, mb, mbw, etc.)
-- **Frontend Integration** (`static/src/js/`) - Checkout SDK initialization and RPC
-  calls
+| File                                | Responsibility                                                   |
+| ----------------------------------- | ---------------------------------------------------------------- |
+| `models/payment_provider.py`        | Provider config, EasyPay API calls, payload builders             |
+| `models/payment_transaction.py`     | Transaction state machine, token creation, refund/capture/void   |
+| `controllers/checkout_session.py`   | JSON-RPC: creates EasyPay checkout session on Pay click          |
+| `controllers/checkout_page.py`      | Serves the dedicated SDK page (`/payment/easypay/checkout`)      |
+| `controllers/main.py`               | Webhook handlers, single-payment return, checkout success/cancel |
+| `static/src/js/payment_form.esm.js` | Odoo payment form override — initiates session creation          |
+| `static/src/js/checkout.js`         | EasyPay SDK initialization and event handlers                    |
+| `views/checkout_template.xml`       | Standalone page template hosting the SDK                         |
+| `const.py`                          | API URLs, status mapping, payment method codes                   |
 
-## Checkout Workflow
+---
 
-### 1. User Initiates Payment
+## Payment Flows
 
-**User Action:** Selects EasyPay payment method and clicks "Pay"
+### Flow A — Checkout (SDK, recommended)
 
-**Odoo Events:**
+This is the primary flow when `easypay_use_checkout = True` on the provider.
 
-- Payment transaction created (`payment.transaction`)
-- `_get_specific_processing_values()` called
-- `_get_specific_rendering_values()` called
-- Checkout template rendered, JavaScript loads and waits for user to click Pay
+#### Step 1 — Transaction creation
 
-### 2. Checkout Session Creation (Server-Side)
+**User action:** Selects EasyPay on the Odoo payment page and clicks **Pay Now**.
 
-**Odoo Server:**
+**Odoo:**
 
-- Browser calls `/payment/easypay/create_checkout_session` via JSON-RPC
-- `_easypay_create_checkout_session()` builds the payload and calls EasyPay API
-- API call: `POST https://api.test.easypay.pt/2.0/checkout` (test) or
-  `https://api.prod.easypay.pt/2.0/checkout` (production)
-- Response (the **checkout manifest**):
-  `{"id": "57cc19e9-...", "session": "8zoaBOC0Mj5Mg_Y...", "config": null}`
-- The checkout manifest is passed **directly** to `startCheckout()` — do not modify it
-- `easypay_checkout_id` stored on transaction
+- Creates `payment.transaction` record (state: `draft`)
+- Calls `_get_specific_processing_values()` → returns `{"easypay_use_checkout": True}`
+- Renders the standard Odoo payment form
 
-**EasyPay Server:**
+#### Step 2 — Checkout session creation
 
-- Creates checkout session with the requested payment methods
-- Returns the manifest used to initialize the SDK
+**Browser (`payment_form.esm.js`):**
 
-> ⚠️ **Security:** Sessions must always be created server-side. Never expose API keys in
-> client code.
+- Intercepts `_processRedirectFlow` for `providerCode === "easypay"`
+- POSTs to `/payment/easypay/create_checkout_session` (JSON-RPC) with `transaction_id`
+  (the Odoo transaction reference)
 
-### 3. SDK Initialization (Client-Side)
+**Server (`checkout_session.py`):**
+
+- Looks up transaction by reference
+- Guard: if `easypay_checkout_id` already set and state is not `draft`, returns
+  `{"error": "payment_in_progress", "message": "..."}` — prevents double-session for
+  in-flight Multibanco payments
+- Calls `_easypay_create_checkout_session()`:
+  - `POST https://api.test.easypay.pt/2.0/checkout` (test) or `…api.prod.easypay.pt`
+  - Payload includes `type`, `payment.methods`, `order`, `customer`
+  - Single payments: adds `payment.type = "sale"` and `payment.capture`
+  - Frequent payments: omits those fields (required by EasyPay API)
+- Stores `easypay_checkout_id` on transaction
+- Returns `{"checkout_manifest": {...}, "checkout_id": "...", "success": true}`
 
 **Browser:**
 
-- EasyPay SDK loaded from CDN: `https://cdn.easypay.pt/checkout/2.9.1/`
-- `easypayCheckout.startCheckout(manifest, options)` called
-- Payment form rendered inline in `#easypay-checkout` container
-- `testing: true` must be set when using the test API (`api.test.easypay.pt`)
+- Redirects to `/payment/easypay/checkout?session_id=...&manifest=...`
 
-### 4. User Selects Payment Method & Pays
+#### Step 3 — SDK page
 
-**User Action:** Chooses a payment method and submits payment details
+**Server (`checkout_page.py`):**
 
-**EasyPay SDK:**
+- Validates `session_id` and `manifest` params
+- Looks up transaction by `easypay_checkout_id` to derive `api_url` server-side
+- Serialises `{sessionId, manifest, apiUrl}` as `Markup(json.dumps(...))` — safe raw
+  JSON injection into the `<script>` block (no HTML-encoding via QWeb)
+- Renders `checkout_template.xml` with `window.easyPayData = <json>`
 
-- Displays method-specific form fields
-- Invokes payment APIs on the EasyPay side
-- Displays payment feedback inline
+**Browser (`checkout.js`):**
 
-### 5. Payment Processing
+- EasyPay SDK loaded from `https://cdn.easypay.pt/checkout/2.9.1/`
+- `window.easypayCheckout.startCheckout(data.manifest, {...})` called
+- `testing` flag derived from `data.apiUrl` (true if URL contains "test" or is empty)
+- Payment form rendered inline in `#easypay-checkout` div
 
-#### Card Payments (Immediate Capture)
+#### Step 4 — User pays
 
-- User enters card details in SDK form
-- EasyPay processes and captures the payment immediately
-- SDK calls `onSuccess` with status: `paid` or `authorised`
+**Synchronous methods (card):**
 
-#### Multibanco (Delayed Capture)
+- User enters card details
+- SDK captures payment, calls `onSuccess` with `payment.status = "paid"` or
+  `"authorised"`
 
-- EasyPay generates a Multibanco payment reference
-- SDK calls `onSuccess` with status: `pending`
-- User must separately pay using ATM or online banking
-- Funds arrive asynchronously; confirmed via webhook
+**Asynchronous — MB WAY:**
 
-#### MB WAY (Mobile-Initiated)
+- User enters phone number
+- MB WAY push sent to phone; user must confirm on device
+- SDK calls `onSuccess` with `payment.status = "pending"` (or `"paid"` if confirmed
+  immediately)
+- Transaction set to `pending`; later confirmed via webhook → `done`
 
-- User provides phone number in SDK form
-- MB WAY push notification sent to customer's device
-- SDK calls `onSuccess` with status: `paid` or `pending`
+**Asynchronous — Multibanco:**
 
-#### Frequent Payment (Tokenization)
+- SDK displays an ATM reference to the user
+- SDK calls `onSuccess` with `payment.status = "pending"`
+- Transaction set to `pending`
+- User pays at ATM (may be hours/days later)
+- Webhook fires when ATM payment confirmed → transaction → `done`
+- ⚠️ If user navigates back and clicks Pay again, the in-progress guard (Step 2) blocks
+  a new session and shows: _"A payment is already in progress…"_
 
-- SDK calls `onSuccess` with a payment ID to store for future captures
-- Later captures done via `POST /capture/:id`
+**Frequent payment (tokenization):**
 
-### 6. SDK Event Handlers
+- SDK calls `onSuccess` with a `payment.id` (the token reference)
+- `onSuccess` passes `payment_id` in the redirect URL
+- Server calls `_easypay_create_token(payment_id)` → creates `payment.token` record
+- Future charges via `_send_payment_request()` →
+  `POST /2.0/capture/{token.provider_ref}`
+
+#### Step 5 — SDK event handlers
 
 ```javascript
 startCheckout(manifest, {
-  display: "inline", // or "popup" (popup requires id: "button-element-id")
-  testing: true, // remove in production
-  language: "pt_PT", // "en", "pt_PT", "es_ES" — auto-detected if omitted
-  onSuccess: (checkoutInfo) => {
-    // Payment completed - checkoutInfo.payment has details
-    // In frequent flow: save checkoutInfo.payment.id for later captures
+  display: "inline",
+  testing: isTestMode,
+  onSuccess: function (successInfo) {
+    // unmount() then redirect to /checkout/success
   },
-  onError: (error) => {
-    // Unrecoverable error — checkout cannot continue
-    // error.code === 'checkout-expired': must create a new session
+  onError: function (error) {
+    // unmount() always called first, then:
+    // "checkout-expired"  → history.back() (user can retry, new session created)
+    // "already-paid"      → /payment/status
+    // "checkout-canceled" → /checkout/cancel?session_id=...
+    // default             → show error message in #payment-error div
   },
-  onPaymentError: (error) => {
-    // Recoverable error — informative only
-    // SDK keeps form open; user can retry with same or different method
-    // error has both 'code' and 'checkout' (same shape as onSuccess checkoutInfo)
+  onPaymentError: function () {
+    // Recoverable — SDK keeps form open, user can retry
   },
-  onClose: () => {
-    // User dismissed the form — NOT a payment failure or cancellation
-    // Clean up or redirect to payment status page
+  onClose: function () {
+    // unmount() then /payment/status
+    // onClose is NOT a cancellation; transaction remains pending
   },
 });
 ```
 
-> ⚠️ **Popup mode** requires passing `id` of the trigger button element:
-> `startCheckout(manifest, { id: "checkout-button", display: "popup" })`
+> ⚠️ `unmount()` is called before every navigation to prevent SDK memory leaks.
 
-> ⚠️ **Session Expiration:** Checkout sessions expire after **30 minutes**. Handle
-> `checkout-expired` in `onError` by creating a new session.
+> ⚠️ Sessions expire after **30 minutes**. `checkout-expired` triggers `history.back()`
+> so the user can re-click Pay, which creates a fresh session.
 
-### 7. Success Callback Data
+#### Step 6 — `/checkout/success` handler
 
-```javascript
-checkoutInfo = {
-    type: "single|frequent|subscription",  // top-level payment type
-    payment: {
-        id: "...",                    // Payment ID — save this for future captures (frequent flow)
-        method: "cc|mb|mbw|dd|...",   // Selected payment method (same codes as checkout creation)
-        status: "paid|pending|...",   // See status values below
-        brand: "VISA|MasterCard",     // Card only
-        expiration: "MM/YY",          // Card: 'MM/YY'; Multibanco: 'Y-m-d H:i'
-        sddMandate: { ... },          // SEPA Direct Debit only
-    }
-}
-```
+**Browser:** redirects to
+`/payment/easypay/checkout/success?id={session_id}&method={method}&status={status}`
+(optionally `&payment_id={id}` for frequent payments)
 
-Possible `payment.status` values: `authorised`, `deleted`, `enrolled`, `error`,
-`failed`, `paid`, `pending`, `success`, `tokenized` (frequent only), `voided`
+**Server (`main.py → easypay_checkout_success`):**
 
-> Note: `type` is a **top-level** field on `checkoutInfo`, not inside `payment`.
+1. Finds transaction by `checkout_id` (maps to `easypay_checkout_id`)
+2. `GET /2.0/checkout/{easypay_checkout_id}` — fetches authoritative payment data
+3. If frequent: calls `tx._easypay_create_token(payment_id)` (idempotent)
+4. Calls `tx._handle_notification_data("easypay", payment_data)`
+5. `_process_notification_data` resolves status and sets transaction state:
+   - `"success"` / `"paid"` / `"captured"` → `done`
+   - `"pending"` / `"waiting"` → `pending`
+   - `"tokenized"` → `done` (frequent setup complete)
+   - Unrecognised status while in `draft` → `pending` (webhook will resolve)
+6. Redirects to `/payment/status`
 
-> ⚠️ **Important:** Do **not** rely solely on the client-side `onSuccess` callback for
-> critical business logic. Always verify payment status on the server using webhooks or
-> the API.
+#### Step 7 — Webhooks (async confirmation)
 
-### 8. Post-Payment Redirect
+EasyPay sends POST notifications to:
 
-**Browser:**
+- `/payment/easypay/webhook/generic`
+- `/payment/easypay/webhook/authorisation`
+- `/payment/easypay/webhook/transaction`
 
-- After `onSuccess`, redirects to
-  `/payment/easypay/checkout/success?id={session_id}&method={method}&status={status}`
-- After `onClose`, redirects to `/payment/status` (standard Odoo page — `onClose` is not
-  a cancellation)
-- The `/checkout/cancel` route is only used if EasyPay explicitly cancels the payment
-  server-side
+**Server (`_process_webhook_notification`):**
 
-**Odoo Server:**
+1. Extracts `id` (payment ID) and `key` (reference) from body
+2. Finds transaction (reference preferred over payment ID)
+3. Selects endpoint: checkout → authorisation → single (in that priority)
+4. `GET` full payment data from selected endpoint
+5. If frequent: `tx._easypay_create_token(...)` (idempotent)
+6. `tx._handle_notification_data(...)` → updates state
+7. Always returns HTTP 200 (EasyPay retries on non-200)
 
-- `easypay_checkout_success()` handler called
-- Fetches full payment details: `GET /2.0/checkout/{session_id}`
-- Updates transaction with:
-  - `easypay_payment_method` (selected method)
-  - `easypay_capture_status` (capture status)
-  - `easypay_payment_details` (full response)
-- Calls `_handle_notification_data()` to update Odoo transaction state
+---
 
-### 9. Webhook Processing (Async - Critical for Multibanco)
+### Flow B — Single Payment (redirect, non-checkout)
 
-**EasyPay Server** notifies Odoo asynchronously:
+Used when `easypay_use_checkout = False`.
 
-- `POST /payment/easypay/webhook/generic`
-- `POST /payment/easypay/webhook/authorisation`
-- `POST /payment/easypay/webhook/transaction`
+1. `_get_specific_processing_values()` calls `POST /2.0/single` immediately
+2. Stores `easypay_payment_id` and returns `easypay_payment_url` (EasyPay hosted page
+   URL)
+3. Odoo renders a redirect form (`payment_easypay_templates.xml`) — auto-submits GET to
+   the payment URL
+4. User completes payment on EasyPay hosted page
+5. EasyPay redirects to `/payment/easypay/return?key={reference}&id={payment_id}`
+6. Server: `GET /2.0/single/{payment_id}` → `_handle_notification_data`
 
-**Odoo Server:**
+---
 
-- Validates notification data
-- Fetches latest payment details from EasyPay API
-- Updates transaction state (e.g., `pending` → `done` for Multibanco)
+## Status Mapping
 
-## Complete Flow Timeline
+| EasyPay status                                         | Odoo transaction state     |
+| ------------------------------------------------------ | -------------------------- |
+| `pending`, `waiting`                                   | `pending`                  |
+| `authorized`, `authorised`                             | `authorized`               |
+| `success`, `captured`, `paid`, `tokenized`, `complete` | `done`                     |
+| `cancelled`, `canceled`                                | `cancel`                   |
+| `failed`, `error`                                      | `error`                    |
+| Unrecognised (tx in draft)                             | `pending` (awaits webhook) |
 
-```
-User Clicks Pay
-  → Browser calls /create_checkout_session (RPC)
-    → Odoo calls POST /2.0/checkout (EasyPay API)
-      → Manifest returned to browser
-        → SDK initializes and renders payment form
-          → User selects method and pays
-            → SDK onSuccess fires
-              → Browser redirects to /checkout/success
-                → Odoo calls GET /2.0/checkout/{id}
-                  → Transaction state updated
-                    → (Async) Webhook confirms or updates state
-```
+---
 
-## Capture Status Differences
+## Capture, Refund, Void
 
-| Method            | Capture Timing            | Status after `onSuccess`         |
-| ----------------- | ------------------------- | -------------------------------- |
-| Card              | Immediate                 | `paid` or `authorised`           |
-| MB WAY            | Immediate                 | `paid`                           |
-| Multibanco        | Delayed (user pays later) | `pending` → `paid` (via webhook) |
-| SEPA Direct Debit | Delayed                   | `pending`                        |
+### Manual Capture (`_send_capture_request`)
+
+- Requires `easypay_transaction_id` (capture ID from webhook)
+- `POST /2.0/capture/{easypay_transaction_id}` with `{descriptive, value}`
+- Sets transaction → `done`
+
+### Refund (`_send_refund_request`)
+
+- If `easypay_transaction_id` missing: fetches it via `GET /2.0/checkout/{id}` or
+  `GET /2.0/single/{id}` first
+- `POST /2.0/capture/{easypay_transaction_id}/refund` with `{value}`
+- Creates child refund transaction
+
+### Void (`_send_void_request`)
+
+- Requires `easypay_payment_id`
+- `POST /2.0/authorisation/{easypay_payment_id}/void`
+- Sets transaction → `canceled`
+
+---
+
+## Capture Status After `onSuccess`
+
+| Method            | Immediate? | Status after `onSuccess` | Confirmed by                  |
+| ----------------- | ---------- | ------------------------ | ----------------------------- |
+| Card              | Yes        | `paid` or `authorised`   | `/checkout/success`           |
+| MB WAY            | Sometimes  | `paid` or `pending`      | `/checkout/success` + webhook |
+| Multibanco        | No         | `pending`                | Webhook only                  |
+| SEPA Direct Debit | No         | `pending`                | Webhook only                  |
+| Frequent (setup)  | Yes        | `tokenized`              | `/checkout/success`           |
+
+---
 
 ## Data Storage
 
 ### Transaction Fields
 
-| Field                     | Description                                      |
-| ------------------------- | ------------------------------------------------ |
-| `easypay_payment_id`      | Payment ID from EasyPay                          |
-| `easypay_checkout_id`     | Checkout session identifier                      |
-| `easypay_payment_method`  | Method selected by user (cc, mb, mbw, etc.)      |
-| `easypay_capture_status`  | Capture status (paid, pending, authorised, etc.) |
-| `easypay_payment_details` | Full JSON response from EasyPay                  |
-| `easypay_payment_url`     | Redirect URL (non-checkout flow)                 |
+| Field                     | Description                                            |
+| ------------------------- | ------------------------------------------------------ |
+| `easypay_payment_id`      | EasyPay payment ID (used for void, single-flow lookup) |
+| `easypay_transaction_id`  | Capture ID (used for refund and manual capture)        |
+| `easypay_checkout_id`     | Checkout session ID                                    |
+| `easypay_payment_method`  | Method selected by user (`cc`, `mb`, `mbw`, …)         |
+| `easypay_capture_status`  | Raw capture status from EasyPay                        |
+| `easypay_payment_details` | Full JSON response (audit trail)                       |
+| `easypay_payment_url`     | Redirect URL (single-payment flow only)                |
+| `token_id`                | Linked `payment.token` (frequent flow only)            |
 
-### Provider Configuration Fields
+### Provider Fields
 
-| Field                        | Description                            |
-| ---------------------------- | -------------------------------------- |
-| `easypay_account_id`         | EasyPay account identifier             |
-| `easypay_api_key`            | API key for authentication (encrypted) |
-| `easypay_payment_method_ids` | Available payment methods              |
-| `easypay_use_checkout`       | Enable checkout flow                   |
-| `easypay_payment_type`       | Single vs frequent payments            |
+| Field                        | Description                                       |
+| ---------------------------- | ------------------------------------------------- |
+| `easypay_account_id`         | EasyPay account identifier                        |
+| `easypay_api_key`            | API key (admin-only, encrypted)                   |
+| `easypay_payment_method_ids` | Enabled payment methods                           |
+| `easypay_use_checkout`       | `True` = checkout flow, `False` = single/redirect |
+| `easypay_payment_type`       | `"single"` or `"frequent"`                        |
+| `easypay_webhook_base_url`   | Computed — base URL shown in provider form        |
+
+---
 
 ## API Endpoints
 
 ### EasyPay API
 
-| Endpoint                            | Description                                                           |
-| ----------------------------------- | --------------------------------------------------------------------- |
-| `POST /2.0/checkout`                | Create checkout session                                               |
-| `GET /2.0/checkout/{id}`            | Get checkout details                                                  |
-| `POST /2.0/single`                  | Create single payment (non-checkout flow)                             |
-| `GET /2.0/single/{id}`              | Get payment details                                                   |
-| `POST /2.0/capture/:id`             | Capture frequent payment (body: `{"value": ..., "descriptive": ...}`) |
-| `POST /2.0/capture/{id}/refund`     | Process refund                                                        |
-| `POST /2.0/authorisation/{id}/void` | Void authorized payment                                               |
+| Endpoint                       | Method | Description                                |
+| ------------------------------ | ------ | ------------------------------------------ |
+| `/2.0/checkout`                | POST   | Create checkout session                    |
+| `/2.0/checkout/{id}`           | GET    | Fetch checkout details                     |
+| `/2.0/single`                  | POST   | Create single payment                      |
+| `/2.0/single/{id}`             | GET    | Fetch single payment details               |
+| `/2.0/capture/{id}`            | POST   | Capture frequent payment or manual capture |
+| `/2.0/capture/{id}/refund`     | POST   | Process refund                             |
+| `/2.0/authorisation/{id}/void` | POST   | Void authorised payment                    |
+| `/2.0/config`                  | PATCH  | Register webhook URLs                      |
+| `/2.0/system/ping`             | GET    | Connection test                            |
 
 ### Odoo Controllers
 
-| Route                                      | Description                       |
-| ------------------------------------------ | --------------------------------- |
-| `/payment/easypay/create_checkout_session` | Create EasyPay session (JSON-RPC) |
-| `/payment/easypay/checkout/success`        | Post-payment redirect handler     |
-| `/payment/easypay/checkout/cancel`         | Cancellation redirect handler     |
-| `/payment/easypay/webhook/generic`         | Generic webhook                   |
-| `/payment/easypay/webhook/authorisation`   | Authorisation webhook             |
-| `/payment/easypay/webhook/transaction`     | Transaction webhook               |
+| Route                                      | Description                           |
+| ------------------------------------------ | ------------------------------------- |
+| `/payment/easypay/create_checkout_session` | JSON-RPC: create session on Pay click |
+| `/payment/easypay/checkout`                | Serves SDK page                       |
+| `/payment/easypay/checkout/success`        | Post-payment redirect (GET)           |
+| `/payment/easypay/checkout/cancel`         | SDK-triggered cancel (GET)            |
+| `/payment/easypay/return`                  | Single-payment return (GET or POST)   |
+| `/payment/easypay/webhook/generic`         | EasyPay generic webhook (POST)        |
+| `/payment/easypay/webhook/authorisation`   | EasyPay authorisation webhook (POST)  |
+| `/payment/easypay/webhook/transaction`     | EasyPay transaction webhook (POST)    |
+
+---
 
 ## Configuration
 
-### Provider Setup
+1. Go to **Accounting → Configuration → Payment Providers**, create or open EasyPay
+2. Set **Account ID** and **API Key** (from EasyPay backoffice)
+3. Select **Payment Methods** to offer
+4. Set **Use Checkout** = enabled (recommended) or disabled (single/redirect flow)
+5. Set **Payment Type**: `single` or `frequent`
+6. Click **Configure Webhooks** — registers all Odoo webhook URLs with EasyPay
+   automatically via `PATCH /2.0/config`
+7. Click **Test Connection** to verify credentials
 
-1. Create EasyPay payment provider in Odoo (Accounting → Configuration → Payment
-   Providers)
-2. Configure **Account ID** and **API Key** from EasyPay backoffice
-3. Select available payment methods
-4. Enable **Use Checkout** to use the SDK-based flow
-5. Configure **Payment Type** (single or frequent)
-6. Click **Configure Webhooks** to register Odoo webhook URLs with EasyPay
-
-### Payment Method Codes (EasyPay API)
+### Payment Method Codes
 
 | Code  | Method            |
 | ----- | ----------------- |
@@ -295,32 +339,102 @@ User Clicks Pay
 | `gp`  | Google Pay        |
 | `sw`  | Samsung Pay       |
 
-## Testing
+---
 
-- Use test environment: `https://api.test.easypay.pt`
-- Always pass `testing: true` to `startCheckout` when using the test API
-- Remove `testing: true` before going to production
-- Test cards and payment methods available in
-  [EasyPay Payment Methods guide](https://docs.easypay.pt/docs/guides/payment-methods)
+## Manual Testing Guide
 
-## Best Practices (from official EasyPay docs)
+### Prerequisites
 
-1. **Always create sessions server-side** — never expose API keys in client code
-2. **Handle all error cases** — including `checkout-expired` to re-create sessions
-3. **Use webhooks** — do not rely solely on client-side callbacks for payment
-   confirmation
-4. **Verify payments server-side** — always cross-check via EasyPay API
-5. **Customize for your brand** — match Checkout to your website's look and feel
-6. **Test thoroughly** — use test environment before going live
-7. **Mobile first** — test on various devices and screen sizes
+- Provider configured with test credentials (`api.test.easypay.pt`)
+- Webhooks registered and reachable (use ngrok or similar if local)
+- Provider state set to **Test**
+
+### Test Case 1 — Card payment (checkout flow, immediate)
+
+1. Add an item to cart and proceed to payment
+2. Select EasyPay, click **Pay Now**
+3. **Expected:** Redirected to `/payment/easypay/checkout` — spinner shown, then SDK
+   form appears
+4. Select **Credit/Debit Card**, enter test card details
+5. **Expected:** `onSuccess` fires, redirected to `/payment/easypay/checkout/success`
+6. **Expected:** Odoo transaction state → **Done**
+7. **Verify in Odoo:** Transaction has `easypay_payment_id`, `easypay_transaction_id`,
+   `easypay_capture_status = "paid"`
+
+### Test Case 2 — MB WAY (async, user confirmation required)
+
+1. Proceed to payment, click **Pay Now**
+2. Select **MB WAY**, enter a valid Portuguese mobile number
+3. **Expected:** `onSuccess` fires with `status = "pending"` or `"paid"`
+4. **Expected:** Redirected to `/checkout/success` → transaction → **Pending** (if
+   `"pending"`) or **Done**
+5. Confirm (or reject) on the MB WAY app
+6. **Expected:** Webhook arrives → transaction → **Done** (or **Error** on rejection)
+
+### Test Case 3 — Multibanco (very async)
+
+1. Proceed to payment, click **Pay Now**
+2. Select **Multibanco**
+3. **Expected:** SDK displays Entity + Reference + Amount
+4. **Expected:** `onSuccess` fires with `status = "pending"`
+5. **Expected:** Redirected to `/checkout/success` → transaction → **Pending**
+6. Close the browser tab
+7. Simulate ATM payment using EasyPay test tools or wait for test webhook
+8. **Expected:** Webhook → transaction → **Done**
+9. **Retry guard test:** Before paying, go back and click **Pay Now** again
+   - **Expected:** Error dialog: _"A payment is already in progress…"_ (no new session
+     created)
+
+### Test Case 4 — Session expiry
+
+1. Start checkout, wait 30+ minutes (or simulate via EasyPay test tools)
+2. **Expected:** SDK fires `onError` with `error.code = "checkout-expired"`
+3. **Expected:** `history.back()` — user returns to payment page
+4. Click **Pay Now** again
+5. **Expected:** New session created successfully, flow continues normally
+
+### Test Case 5 — Frequent payment setup
+
+1. Configure provider with **Payment Type = Frequent**
+2. Proceed to payment, complete card payment
+3. **Expected:** `onSuccess` fires with `payment.id`
+4. **Expected:** `payment.token` record created in Odoo (visible on transaction)
+5. **Verify:** Token has `provider_ref = payment.id`
+
+### Test Case 6 — Frequent payment charge (subsequent)
+
+1. With an existing token from Test Case 5
+2. Trigger a new charge via Odoo subscription or manual `_send_payment_request()`
+3. **Expected:** `POST /2.0/capture/{token.provider_ref}` called
+4. **Expected:** Transaction → **Done** with `easypay_transaction_id` set
+
+### Test Case 7 — Refund
+
+1. Start from a **Done** transaction
+2. Click **Refund** in Odoo
+3. **Expected:** `POST /2.0/capture/{easypay_transaction_id}/refund` called
+4. **Expected:** Child refund transaction created with `easypay_payment_id` set
+
+### Test Case 8 — Single payment flow (non-checkout)
+
+1. Set provider **Use Checkout = disabled**
+2. Proceed to payment
+3. **Expected:** `POST /2.0/single` called during page load, redirect form auto-submits
+4. **Expected:** Redirected to EasyPay hosted page
+5. Complete payment
+6. **Expected:** Redirected to `/payment/easypay/return` → transaction → **Done**
+
+---
 
 ## Troubleshooting
 
-| Issue                                          | Solution                                                               |
-| ---------------------------------------------- | ---------------------------------------------------------------------- |
-| "This payment method needs a partner in crime" | Ensure payment methods are linked to an enabled provider               |
-| Checkout SDK not loading                       | Check CDN availability; verify `testing` flag matches API environment  |
-| `checkout-expired` error                       | Create a new checkout session and re-initialize the SDK                |
-| Multibanco payment not confirmed               | Check webhook delivery; Multibanco is async and requires webhooks      |
-| Payment status not updating                    | Check webhook URLs are accessible and registered in EasyPay backoffice |
-| `transaction_id` missing in session creation   | Ensure the transaction reference is passed correctly via RPC           |
+| Issue                                  | Solution                                                                           |
+| -------------------------------------- | ---------------------------------------------------------------------------------- |
+| SDK not loading                        | Check CDN availability; `onerror` on the `<script>` tag shows `#payment-error` div |
+| `testing` flag mismatch                | Provider state **Test** → `api.test.easypay.pt` → `testing: true` auto-set         |
+| `checkout-expired`                     | User hit 30-min limit; `history.back()` lets them restart                          |
+| Multibanco not confirmed               | Check webhook delivery; test with ngrok if running locally                         |
+| _"Payment already in progress"_        | An earlier Multibanco/MB WAY session is open; pay it or wait for expiry            |
+| Payment status stuck on Pending        | Webhook not reachable; check URLs in EasyPay backoffice match Odoo base URL        |
+| No `easypay_transaction_id` on Done tx | Webhook payload lacked `capture.id`; refund will fetch it on demand                |
+| `transaction_id` missing in session    | `processingValues.reference` not passed from JS form                               |

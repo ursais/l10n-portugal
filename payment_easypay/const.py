@@ -3,7 +3,7 @@ API_URL_TEST = "https://api.test.easypay.pt"
 API_URL_PROD = "https://api.prod.easypay.pt"
 
 # Payment methods
-DEFAULT_PAYMENT_METHOD_CODES = {"card", "visa", "mastercard"}
+DEFAULT_PAYMENT_METHOD_CODES = {"card"}
 PAYMENT_METHODS_MAPPING = {
     "cc": "Credit/Debit Card",
     "mb": "Multibanco",
@@ -14,8 +14,6 @@ PAYMENT_METHODS_MAPPING = {
     "gp": "Google Pay",
     "sw": "Samsung Pay",
 }
-DEFAULT_PAYMENT_METHODS = ["cc"]
-
 # Payment types
 PAYMENT_TYPE_SALE = "sale"
 PAYMENT_TYPE_AUTHORISATION = "authorisation"
@@ -23,15 +21,9 @@ PAYMENT_TYPE_AUTHORISATION = "authorisation"
 # Status mapping
 STATUS_MAPPING = {
     "draft": (),
-    "pending": ("pending",),
+    "pending": ("pending", "waiting"),
     "authorized": ("authorized", "authorised"),
-    "done": ("success", "captured", "paid"),
-    "cancel": ("cancelled",),
-    "error": ("failed",),
+    "done": ("success", "captured", "paid", "tokenized", "complete"),
+    "cancel": ("cancelled", "canceled"),
+    "error": ("failed", "error"),
 }
-
-# Webhook events
-HANDLED_WEBHOOK_EVENTS = ["generic", "authorisation", "transaction"]
-
-# Supported countries
-SUPPORTED_COUNTRIES = {"PT"}

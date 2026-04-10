@@ -20,6 +20,19 @@ class EasyPayController(http.Controller):
     _authorisation_webhook_url = "/payment/easypay/webhook/authorisation"
     _transaction_webhook_url = "/payment/easypay/webhook/transaction"
 
+    def _redirect_to_payment_status(self):
+        """Standard redirect to payment status page."""
+        return werkzeug.utils.redirect("/payment/status", code=303)
+
+    def _extract_reference(self, data):
+        """Extract transaction reference from data dict or URL args."""
+        return (
+            data.get("key")
+            or data.get("reference")
+            or request.httprequest.args.get("key")
+            or request.httprequest.args.get("reference")
+        )
+
     @http.route(
         _return_url,
         type="http",
@@ -28,10 +41,6 @@ class EasyPayController(http.Controller):
         csrf=False,
         save_session=False,
     )
-    def _redirect_to_payment_status(self):
-        """Standard redirect to payment status page."""
-        return werkzeug.utils.redirect("/payment/status", code=303)
-
     def easypay_return_from_redirect(self, **data):
         """Process the return from EasyPay after payment."""
         # Parse JSON body if POST
@@ -41,30 +50,35 @@ class EasyPayController(http.Controller):
         ):
             try:
                 data = json.loads(request.httprequest.data.decode("utf-8"))
-            except Exception:
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                _logger.warning("Failed to parse JSON body in return handler")
                 data = {}
 
-        # Extract payment data from body or URL params
-        reference = (
-            data.get("key")
-            or data.get("reference")
-            or request.httprequest.args.get("key")
-            or request.httprequest.args.get("reference")
-        )
-
+        reference = self._extract_reference(data)
         if reference:
-            tx_sudo = (
-                request.env["payment.transaction"]
-                .sudo()
-                ._find_transaction_reference(reference)
-            )
-            if tx_sudo and tx_sudo.provider_id.code == "easypay":
-                payment_id = data.get("id")
+            tx_sudo = self._find_transaction(None, reference)
+            if tx_sudo:
+                payment_id = data.get("id") or tx_sudo.easypay_payment_id
                 if payment_id:
-                    payment_data = tx_sudo.provider_id._easypay_make_request(
-                        f"/2.0/single/{payment_id}", method="GET"
-                    )
-                    tx_sudo._handle_notification_data("easypay", payment_data)
+                    try:
+                        payment_data = tx_sudo.provider_id._easypay_make_request(
+                            f"/2.0/single/{payment_id}", method="GET"
+                        )
+                    except Exception as e:
+                        _logger.exception(
+                            "Error fetching payment data for return %s: %s",
+                            reference,
+                            e,
+                        )
+                        return self._redirect_to_payment_status()
+                    try:
+                        tx_sudo._handle_notification_data("easypay", payment_data)
+                    except Exception as e:
+                        _logger.exception(
+                            "Error processing notification for return %s: %s",
+                            reference,
+                            e,
+                        )
 
         return self._redirect_to_payment_status()
 
@@ -76,35 +90,9 @@ class EasyPayController(http.Controller):
         csrf=False,
         save_session=False,
     )
-    def _generic_webhook(self):
+    def _generic_webhook(self, **data):
         """Handle generic webhook from EasyPay."""
-        try:
-            data = json.loads(request.httprequest.data.decode("utf-8"))
-        except Exception:
-            data = {}
-
-        reference = (
-            data.get("key")
-            or data.get("reference")
-            or request.httprequest.args.get("key")
-            or request.httprequest.args.get("reference")
-        )
-
-        if reference:
-            tx_sudo = (
-                request.env["payment.transaction"]
-                .sudo()
-                ._find_transaction_reference(reference)
-            )
-            if tx_sudo and tx_sudo.provider_id.code == "easypay":
-                payment_id = data.get("id")
-                if payment_id:
-                    payment_data = tx_sudo.provider_id._easypay_make_request(
-                        f"/2.0/single/{payment_id}", method="GET"
-                    )
-                    tx_sudo._handle_notification_data("easypay", payment_data)
-
-        return self._redirect_to_payment_status()
+        return self._process_webhook_notification(data, "generic")
 
     @http.route(
         _authorisation_webhook_url,
@@ -114,22 +102,9 @@ class EasyPayController(http.Controller):
         csrf=False,
         save_session=False,
     )
-    def _authorisation_webhook(self, **kwargs):
+    def _authorisation_webhook(self, **data):
         """Handle authorisation webhook from EasyPay."""
-        try:
-            data = json.loads(request.httprequest.data.decode("utf-8"))
-        except Exception:
-            data = kwargs
-
-        tx_sudo = (
-            request.env["payment.transaction"]
-            .sudo()
-            ._find_transaction_reference(data.get("key"))
-        )
-        if tx_sudo and tx_sudo.provider_id.code == "easypay":
-            tx_sudo._handle_notification_data("easypay", data)
-
-        return request.make_json_response({}, status=200)
+        return self._process_webhook_notification(data, "authorisation")
 
     @http.route(
         _transaction_webhook_url,
@@ -143,32 +118,58 @@ class EasyPayController(http.Controller):
         """Process transaction webhook notifications from EasyPay."""
         return self._process_webhook_notification(data, "transaction")
 
+    def _get_webhook_endpoint(self, tx_sudo, webhook_type, payment_id):
+        """Return the API endpoint to fetch full payment data for a webhook.
+
+        :param tx_sudo: The payment transaction record
+        :param str webhook_type: Webhook route type ('generic', 'authorisation',
+                                 'transaction')
+        :param str payment_id: EasyPay payment ID from the notification body
+        :return: Endpoint path or None if lookup is not possible
+        :rtype: str|None
+        """
+        if tx_sudo.easypay_checkout_id:
+            return f"/2.0/checkout/{tx_sudo.easypay_checkout_id}"
+        if webhook_type == "authorisation" and payment_id:
+            return f"/2.0/authorisation/{payment_id}"
+        if payment_id:
+            return f"/2.0/single/{payment_id}"
+        return None
+
     def _process_webhook_notification(self, data, webhook_type):
         payment_id = data.get("id")
         reference = data.get("key")
-        notification_type = data.get("type")
 
         tx_sudo = self._find_transaction(payment_id, reference)
         if not tx_sudo:
             return request.make_json_response({}, status=200)
 
+        endpoint = self._get_webhook_endpoint(tx_sudo, webhook_type, payment_id)
+        if not endpoint:
+            return request.make_json_response({}, status=200)
+
         try:
             payment_data = tx_sudo.provider_id._easypay_make_request(
-                f"/2.0/authorisation/{payment_id}"
-                if notification_type == "authorisation"
-                else f"/2.0/single/{payment_id}",
-                method="GET",
+                endpoint, method="GET"
             )
+        except Exception as e:
+            _logger.exception(
+                "Error fetching payment data for webhook (%s): %s", webhook_type, e
+            )
+            return request.make_json_response({}, status=200)
 
-            if (
-                notification_type == "frequent"
-                and payment_data.get("type") == "frequent"
-            ):
-                self._create_payment_token(tx_sudo, payment_id)
+        if tx_sudo.provider_id._easypay_is_frequent(payment_data):
+            token_ref = payment_data.get("payment", {}).get("id") or payment_id
+            tx_sudo._easypay_create_token(token_ref)
 
+        try:
             tx_sudo._handle_notification_data("easypay", payment_data)
         except Exception as e:
-            _logger.exception("Error processing webhook (%s): %s", webhook_type, e)
+            _logger.exception(
+                "Error processing notification data for webhook (%s): %s",
+                webhook_type,
+                e,
+            )
 
         return request.make_json_response({}, status=200)
 
@@ -176,39 +177,22 @@ class EasyPayController(http.Controller):
         """Find transaction by reference or payment ID."""
         tx_sudo = request.env["payment.transaction"].sudo()
         if reference:
-            return tx_sudo.search([("reference", "=", reference)], limit=1)
+            return tx_sudo.search(
+                [("reference", "=", reference), ("provider_code", "=", "easypay")],
+                limit=1,
+            )
         elif payment_id:
             return tx_sudo.search(
                 [
+                    "&",
                     "|",
                     ("easypay_payment_id", "=", payment_id),
                     ("easypay_checkout_id", "=", payment_id),
+                    ("provider_code", "=", "easypay"),
                 ],
                 limit=1,
             )
         return None
-
-    def _create_payment_token(self, tx_sudo, payment_id):
-        """Create payment token for frequent payments."""
-        token = (
-            request.env["payment.token"]
-            .sudo()
-            .create(
-                {
-                    "provider_id": tx_sudo.provider_id.id,
-                    "partner_id": tx_sudo.partner_id.id,
-                    "provider_ref": payment_id,
-                    "payment_method_id": tx_sudo.payment_method_id.id,
-                    "payment_details": f"•••• {payment_id[-4:]}"
-                    if len(payment_id) > 4
-                    else payment_id,
-                }
-            )
-        )
-        tx_sudo.token_id = token.id
-        _logger.info(
-            "Payment token %s created for transaction %s", payment_id, tx_sudo.reference
-        )
 
     @http.route(
         "/payment/easypay/checkout/success",
@@ -222,40 +206,37 @@ class EasyPayController(http.Controller):
         checkout_id = data.get("id")
         reference = data.get("key") or data.get("reference")
 
-        domain = [("provider_code", "=", "easypay")]
-        if reference:
-            domain += [("reference", "=", reference)]
-        elif checkout_id:
-            domain += [("easypay_checkout_id", "=", checkout_id)]
-        else:
+        if not checkout_id and not reference:
             return self._redirect_to_payment_status()
 
-        tx_sudo = request.env["payment.transaction"].sudo().search(domain, limit=1)
+        tx_sudo = self._find_transaction(checkout_id, reference)
         if not tx_sudo:
             return self._redirect_to_payment_status()
-
-        # Store client-side hints from onSuccess callback as early values
-        if data.get("method"):
-            tx_sudo.easypay_payment_method = data["method"]
-        if data.get("status"):
-            tx_sudo.easypay_capture_status = data["status"]
 
         try:
             payment_data = tx_sudo.provider_id._easypay_make_request(
                 f"/2.0/checkout/{tx_sudo.easypay_checkout_id}", method="GET"
             )
-
-            # Server-side data takes precedence over client-side hints
-            payment_info = payment_data.get("payment", {})
-            if payment_info:
-                tx_sudo.easypay_payment_method = payment_info.get("method")
-                tx_sudo.easypay_capture_status = payment_info.get("status")
-                tx_sudo.easypay_payment_details = payment_data
-
-            tx_sudo._handle_notification_data("easypay", payment_data)
         except Exception as e:
             _logger.exception(
                 "Error fetching checkout details for %s: %s", tx_sudo.reference, e
+            )
+            tx_sudo._set_error(f"Failed to verify payment with EasyPay: {e}")
+            return self._redirect_to_payment_status()
+
+        # Handle frequent payment tokenization before processing
+        if tx_sudo.provider_id._easypay_is_frequent(payment_data):
+            payment_id = data.get("payment_id") or payment_data.get("payment", {}).get(
+                "id"
+            )
+            if payment_id:
+                tx_sudo._easypay_create_token(payment_id)
+
+        try:
+            tx_sudo._handle_notification_data("easypay", payment_data)
+        except Exception as e:
+            _logger.exception(
+                "Error processing notification for %s: %s", tx_sudo.reference, e
             )
 
         return self._redirect_to_payment_status()
@@ -270,12 +251,8 @@ class EasyPayController(http.Controller):
     )
     def easypay_checkout_cancel(self, **data):
         reference = data.get("key") or data.get("reference")
-        if reference:
-            tx_sudo = (
-                request.env["payment.transaction"]
-                .sudo()
-                .search([("reference", "=", reference)])
-            )
-            if tx_sudo:
-                tx_sudo._set_canceled(state_message="Payment cancelled by customer")
+        session_id = data.get("session_id")
+        tx_sudo = self._find_transaction(session_id, reference)
+        if tx_sudo:
+            tx_sudo._set_canceled(state_message="Payment cancelled by customer")
         return self._redirect_to_payment_status()

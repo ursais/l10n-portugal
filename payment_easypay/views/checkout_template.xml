@@ -12,12 +12,12 @@
                     rel="stylesheet"
                 />
                 <script>
-                    // Store data for JavaScript
-                    window.easyPayData = {
-                        sessionId: '<t t-esc="session_id" />',
-                        manifest: <t t-raw="manifest_json" />
-                    };
+                    window.easyPayData = <t t-out="easypay_data_json" />;
                 </script>
+                <script
+                    src="https://cdn.easypay.pt/checkout/2.9.1/"
+                    onerror="document.getElementById('payment-loading').style.display='none';document.getElementById('payment-error').style.display='block';"
+                />
             </head>
             <body>
                 <div class="container mt-5">
@@ -71,62 +71,10 @@
                     </div>
                 </div>
 
-                <script>
-                    // Initialize EasyPay checkout
-                    document.addEventListener('DOMContentLoaded', function() {
-                        if (window.easyPayData) {
-                            const sessionId = window.easyPayData.sessionId;
-                            const manifest = window.easyPayData.manifest;
-
-                            // Load SDK and start checkout
-                            const script = document.createElement('script');
-                            script.src = 'https://cdn.easypay.pt/checkout/2.9.1/';
-                            script.onload = function() {
-                                const loadingEl = document.getElementById('payment-loading');
-                                const containerEl = document.getElementById('easypay-checkout-container');
-
-                                if (loadingEl) loadingEl.style.display = 'none';
-                                if (containerEl) containerEl.style.display = 'block';
-
-                                const isTestMode = window.location.hostname.includes('localhost') ||
-                                                  window.location.hostname.includes('test') ||
-                                                  window.location.hostname.includes('pagekite');
-
-                                window.easypayCheckout.startCheckout(manifest, {
-                                    display: "inline",
-                                    testing: isTestMode,
-                                    onSuccess: function(successInfo) {
-                                        window.location.href = '/payment/easypay/checkout/success?id=' + sessionId;
-                                    },
-                                    onError: function(error) {
-                                        const errorEl = document.getElementById('payment-error');
-                                        if (errorEl) {
-                                            errorEl.querySelector('p').textContent = 'Payment error: ' + (error.message || 'Unknown error');
-                                            errorEl.style.display = 'block';
-                                        }
-                                        if (loadingEl) loadingEl.style.display = 'none';
-                                        if (containerEl) containerEl.style.display = 'none';
-                                    },
-                                    onClose: function() {
-                                        window.location.href = '/payment/easypay/checkout/cancel?id=' + sessionId;
-                                    },
-                                });
-                            };
-                            script.onerror = function() {
-                                const loadingEl = document.getElementById('payment-loading');
-                                const errorEl = document.getElementById('payment-error');
-                                if (loadingEl) loadingEl.style.display = 'none';
-                                if (errorEl) errorEl.style.display = 'block';
-                            };
-                            document.head.appendChild(script);
-                        } else {
-                            const loadingEl = document.getElementById('payment-loading');
-                            const errorEl = document.getElementById('payment-error');
-                            if (loadingEl) loadingEl.style.display = 'none';
-                            if (errorEl) errorEl.style.display = 'block';
-                        }
-                    });
-                </script>
+                <script
+                    type="text/javascript"
+                    src="/payment_easypay/static/src/js/checkout.js"
+                />
             </body>
         </t>
     </template>

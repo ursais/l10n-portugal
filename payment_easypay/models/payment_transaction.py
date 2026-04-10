@@ -53,7 +53,7 @@ class PaymentTransaction(models.Model):
         string="Payment Token",
         comodel_name="payment.token",
         readonly=True,
-        domain='[("provider_id", "=", "provider_id")]',
+        domain="[('provider_id', '=', provider_id)]",
         ondelete="restrict",
         help="The payment token for frequent payments (tokenization)",
     )
@@ -72,25 +72,17 @@ class PaymentTransaction(models.Model):
             return res
 
         if self.provider_id.easypay_use_checkout:
-            # Checkout flow - SDK-based inline payment
-            # Don't create session yet - wait until user actually pays
-            res.update(
-                {
-                    "easypay_use_checkout": True,
-                    "api_url": self.provider_id._easypay_get_api_url(),
-                }
-            )
+            res.update({"easypay_use_checkout": True})
         else:
             # Single Payment flow - redirect to hosted page
             response = self.provider_id._easypay_create_single_payment(self.sudo())
             self.easypay_payment_id = response.get("id")
             payment_url = response.get("method", {}).get("url")
-            res.update(
-                {
-                    "easypay_payment_id": self.easypay_payment_id,
-                    "easypay_payment_url": payment_url,
-                }
-            )
+            if not payment_url:
+                raise ValidationError(
+                    _("EasyPay did not return a payment URL. Please try again.")
+                )
+            res.update({"easypay_payment_url": payment_url})
         return res
 
     def _get_specific_rendering_values(self, processing_values):
@@ -106,21 +98,9 @@ class PaymentTransaction(models.Model):
         if self.provider_code != "easypay":
             return res
 
-        if self.provider_id.easypay_use_checkout:
-            # Checkout flow - pass SDK data
+        if not self.provider_id.easypay_use_checkout:
             res.update(
-                {
-                    "checkout_manifest": processing_values.get("checkout_manifest"),
-                    "checkout_id": processing_values.get("checkout_id"),
-                    "api_url": processing_values.get("api_url"),
-                }
-            )
-        else:
-            # Single Payment flow - pass redirect URL
-            res.update(
-                {
-                    "easypay_payment_url": processing_values.get("easypay_payment_url"),
-                }
+                {"easypay_payment_url": processing_values.get("easypay_payment_url")}
             )
         return res
 
@@ -148,6 +128,7 @@ class PaymentTransaction(models.Model):
         elif payment_id:
             tx = self.search(
                 [
+                    "&",
                     "|",
                     ("easypay_payment_id", "=", payment_id),
                     ("easypay_checkout_id", "=", payment_id),
@@ -159,7 +140,7 @@ class PaymentTransaction(models.Model):
             raise ValidationError(
                 _(
                     "EasyPay: No transaction found matching reference %s.",
-                    reference,
+                    reference or payment_id,
                 )
             )
         return tx
@@ -172,20 +153,32 @@ class PaymentTransaction(models.Model):
 
         # Extract relevant data from notification
         payment_id = notification_data.get("id")
-        # EasyPay API uses 'payment_status' for Single Payment
-        # and 'status' for other flows
-        status = notification_data.get("payment_status") or notification_data.get(
-            "status"
-        )
-
-        # Extract payment method and capture status from checkout data
         payment_data = notification_data.get("payment", {})
         payment_method = payment_data.get("method")
+
+        # Status resolution across API response shapes:
+        # - Checkout GET response: top-level 'status' = 'success'|'failed'
+        # - Webhook / single payment: top-level 'status' or 'payment_status'
+        # - onSuccess hint (client-side): passed as 'capture_status'
+        status = (
+            notification_data.get("status")
+            or notification_data.get("payment_status")
+            or payment_data.get("status")
+        )
+
         capture_status = payment_data.get("status") or status
 
         # Update transaction with EasyPay data
         if payment_id and not self.easypay_payment_id:
             self.easypay_payment_id = payment_id
+
+        # Capture transaction ID — needed for refunds and manual capture
+        # Present in checkout flow as payment.capture.id, in single flow as capture.id
+        capture_id = payment_data.get("capture", {}).get("id") or notification_data.get(
+            "capture", {}
+        ).get("id")
+        if capture_id and not self.easypay_transaction_id:
+            self.easypay_transaction_id = capture_id
 
         # Store payment method and capture status
         if payment_method:
@@ -195,10 +188,6 @@ class PaymentTransaction(models.Model):
 
         # Store full payment details for reference
         self.easypay_payment_details = notification_data
-
-        # Map 'paid' status to 'success' for consistency
-        if status == "paid":
-            status = "success"
 
         # Update the payment state
         payment_state = next(
@@ -219,10 +208,21 @@ class PaymentTransaction(models.Model):
         elif payment_state == "cancel":
             self._set_canceled()
         elif payment_state == "error":
-            error_msg = notification_data.get("messages", ["Payment failed"])
+            error_msg = notification_data.get("message", ["Payment failed"])
             if isinstance(error_msg, list):
-                error_msg = ", ".join(error_msg)
+                error_msg = ", ".join(str(m) for m in error_msg)
             self._set_error(error_msg)
+        elif self.state == "draft":
+            # No recognisable status yet (e.g. async method still waiting for
+            # user action) — move to pending so the status page shows something
+            # meaningful. A later webhook will advance the state.
+            _logger.info(
+                "transaction %s has unrecognised status %r while in draft; "
+                "setting pending until webhook confirms",
+                self.reference,
+                status,
+            )
+            self._set_pending()
         else:
             _logger.warning(
                 "received notification for transaction with reference %s "
@@ -230,6 +230,57 @@ class PaymentTransaction(models.Model):
                 self.reference,
                 status,
             )
+
+    def _easypay_create_token(self, payment_id):
+        """Create a payment token for frequent payments on this transaction.
+
+        :param str payment_id: EasyPay payment.id used as provider_ref for
+                               future captures via POST /2.0/capture/{id}
+        """
+        if self.token_id:
+            return
+        token = self.env["payment.token"].create(
+            {
+                "provider_id": self.provider_id.id,
+                "partner_id": self.partner_id.id,
+                "provider_ref": payment_id,
+                "payment_method_id": self.payment_method_id.id,
+                "payment_details": f"•••• {payment_id[-4:]}"
+                if len(payment_id) > 4
+                else payment_id,
+            }
+        )
+        self.token_id = token.id
+        _logger.info(
+            "Payment token %s created for transaction %s",
+            payment_id,
+            self.reference,
+        )
+
+    def _send_payment_request(self):
+        """Override of payment to send a token-based payment request to EasyPay."""
+        if self.provider_code != "easypay":
+            return super()._send_payment_request()
+
+        if not self.token_id:
+            raise ValidationError(
+                _("Cannot charge: No payment token found for this transaction.")
+            )
+        if not self.token_id.provider_ref:
+            raise ValidationError(
+                _("Cannot charge: Payment token has no EasyPay reference.")
+            )
+
+        response = self.provider_id._easypay_make_request(
+            f"/2.0/capture/{self.token_id.provider_ref}",
+            {
+                "descriptive": self.reference,
+                "value": self.amount,
+            },
+        )
+        self.provider_id._easypay_raise_for_status(response, "capture")
+        self.easypay_transaction_id = response.get("id")
+        self._set_done()
 
     def _easypay_get_payment_details(self):
         """Fetch payment details from EasyPay API.
@@ -254,14 +305,28 @@ class PaymentTransaction(models.Model):
             return super()._send_refund_request(amount_to_refund=amount_to_refund)
 
         if not self.easypay_transaction_id:
-            payment_details = self._easypay_get_payment_details()
-            self.easypay_transaction_id = payment_details.get("capture", {}).get("id")
+            if self.easypay_checkout_id:
+                payment_details = self.provider_id._easypay_make_request(
+                    f"/2.0/checkout/{self.easypay_checkout_id}", method="GET"
+                )
+                capture_id = (
+                    payment_details.get("payment", {}).get("capture", {}).get("id")
+                )
+            else:
+                payment_details = self._easypay_get_payment_details()
+                capture_id = payment_details.get("capture", {}).get("id")
+            self.easypay_transaction_id = capture_id
+            if not self.easypay_transaction_id:
+                raise ValidationError(
+                    _("Cannot refund: No capture transaction ID found.")
+                )
 
         refund_amount = amount_to_refund or self.amount
         response = self.provider_id._easypay_make_request(
             f"/2.0/capture/{self.easypay_transaction_id}/refund",
-            {"transaction_id": self.easypay_transaction_id, "value": refund_amount},
+            {"value": refund_amount},
         )
+        self.provider_id._easypay_raise_for_status(response, "refund")
 
         refund_tx = self._create_refund_transaction(amount_to_refund=refund_amount)
         refund_tx.easypay_payment_id = response.get("id")
@@ -272,25 +337,16 @@ class PaymentTransaction(models.Model):
         if self.provider_code != "easypay":
             return super()._send_capture_request()
 
-        if self.easypay_payment_id:
-            endpoint = f"/2.0/single/{self.easypay_payment_id}/capture"
-            payload = {
-                "transaction_key": self.reference,
-                "value": self.amount,
-            }
-        elif self.easypay_transaction_id:
-            endpoint = "/2.0/capture"
-            payload = {
-                "transaction_id": self.easypay_transaction_id,
-                "transaction_key": self.reference,
-                "value": self.amount,
-            }
-        else:
-            raise ValidationError(
-                _("Cannot capture: No EasyPay payment ID or token found")
-            )
+        if not self.easypay_transaction_id:
+            raise ValidationError(_("Cannot capture: No EasyPay transaction ID found"))
+        endpoint = f"/2.0/capture/{self.easypay_transaction_id}"
+        payload = {
+            "descriptive": self.reference,
+            "value": self.amount,
+        }
 
         response = self.provider_id._easypay_make_request(endpoint, payload)
+        self.provider_id._easypay_raise_for_status(response, "capture")
         self.easypay_transaction_id = response.get("id")
         self._set_done()
 
@@ -299,7 +355,11 @@ class PaymentTransaction(models.Model):
         if self.provider_code != "easypay":
             return super()._send_void_request()
 
+        if not self.easypay_payment_id:
+            raise ValidationError(
+                _("Cannot void: No EasyPay payment ID found for this transaction.")
+            )
         self.provider_id._easypay_make_request(
-            f"/2.0/authorisation/{self.easypay_payment_id}/void", {}
+            f"/2.0/authorisation/{self.easypay_payment_id}/void"
         )
         self._set_canceled()

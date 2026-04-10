@@ -9,7 +9,6 @@ from odoo import _, fields, models
 from odoo.exceptions import ValidationError
 
 from .. import const
-from .. import utils as easypay_utils
 from ..controllers.main import EasyPayController
 
 _logger = logging.getLogger(__name__)
@@ -80,36 +79,6 @@ class PaymentProvider(models.Model):
             else:
                 provider.easypay_webhook_base_url = False
 
-    def _easypay_get_inline_form_values(self, amount, currency, partner_id, tx_sudo):
-        """Return the inline form values for EasyPay Checkout.
-
-        Note: self.ensure_one()
-
-        :param float amount: The transaction amount
-        :param res.currency currency: The transaction currency
-        :param res.partner partner_id: The transaction partner
-        :param payment.transaction tx_sudo: The sudoed transaction
-        :return: The inline form values
-        :rtype: str (JSON)
-        """
-        self.ensure_one()
-
-        if self.easypay_use_checkout:
-            response = self._easypay_create_checkout_session(tx_sudo)
-            tx_sudo.easypay_checkout_id = response.get("id")
-
-            import json
-
-            return json.dumps(
-                {
-                    "checkout_manifest": response.get("session"),
-                    "checkout_id": response.get("id"),
-                    "api_url": self._easypay_get_api_url(),
-                }
-            )
-
-        return json.dumps({})
-
     # === BUSINESS METHODS - GETTERS ===#
 
     def _get_default_payment_method_codes(self):
@@ -122,6 +91,7 @@ class PaymentProvider(models.Model):
     def _get_available_tokens(
         self, providers_ids, partner_id, is_validation=False, **kwargs
     ):
+        self.ensure_one()
         if self.code != "easypay":
             return super()._get_available_tokens(
                 providers_ids, partner_id, is_validation, **kwargs
@@ -146,6 +116,12 @@ class PaymentProvider(models.Model):
 
     # === BUSINESS METHODS - PAYMENT FLOW ===#
 
+    _EASYPAY_HTTP_METHODS = {
+        "GET": requests.get,
+        "POST": requests.post,
+        "PATCH": requests.patch,
+    }
+
     def _easypay_make_request(self, endpoint, payload=None, method="POST"):
         url = f"{self._easypay_get_api_url()}{endpoint}"
         headers = {
@@ -154,10 +130,14 @@ class PaymentProvider(models.Model):
             "Content-Type": "application/json",
         }
 
+        http_func = self._EASYPAY_HTTP_METHODS.get(method)
+        if not http_func:
+            raise ValidationError(_("Unsupported HTTP method: %s", method))
+
         try:
-            response = getattr(requests, method.lower())(
+            response = http_func(
                 url,
-                json=payload if method in ["POST", "PATCH"] else None,
+                json=payload if method in ("POST", "PATCH") else None,
                 headers=headers,
                 timeout=60,
             )
@@ -166,6 +146,34 @@ class PaymentProvider(models.Model):
         except requests.exceptions.RequestException as e:
             _logger.error("EasyPay API request failed: %s", e)
             raise ValidationError(_("EasyPay API request failed: %s", str(e))) from None
+
+    @staticmethod
+    def _easypay_is_frequent(payment_data):
+        """Return True if payment_data describes a frequent (tokenization) payment.
+
+        Handles both API response shapes:
+        - Checkout GET response: payment.type = 'frequent'
+        - Webhook / single payment body: top-level type = 'frequent'
+        """
+        return (
+            payment_data.get("payment", {}).get("type") == "frequent"
+            or payment_data.get("type") == "frequent"
+        )
+
+    def _easypay_raise_for_status(self, response, label="Request"):
+        """Raise ValidationError if EasyPay response status is not 'ok'.
+
+        :param dict response: The parsed API response
+        :param str label: Short description for the error message (e.g. 'capture')
+        :raise ValidationError: If response status != 'ok'
+        """
+        if response.get("status") != "ok":
+            msg = response.get("message", ["Unknown error"])
+            if isinstance(msg, list):
+                msg = ", ".join(str(m) for m in msg)
+            raise ValidationError(
+                _("EasyPay %(label)s failed: %(msg)s", label=label, msg=msg)
+            )
 
     def _easypay_create_checkout_session(self, tx_sudo):
         """Create EasyPay checkout session for the transaction."""
@@ -199,34 +207,34 @@ class PaymentProvider(models.Model):
                 "value": tx_sudo.amount,
                 "items": items,
             },
-            "customer": easypay_utils.include_customer_data(tx_sudo),
+            "customer": self._build_customer_data(tx_sudo),
         }
 
-        # Add capture object for payments
-        capture_config = {
-            "descriptive": tx_sudo.reference,
-            "transaction_key": tx_sudo.reference,
-        }
-        payload["payment"]["capture"] = capture_config
-        payload["payment"]["type"] = (
-            const.PAYMENT_TYPE_SALE
-            if payment_type == "single"
-            else const.PAYMENT_TYPE_AUTHORISATION
-        )
+        # Single payments require explicit capture config and payment type
+        # Frequent payments must NOT include these fields per EasyPay API docs
+        if payment_type == "single":
+            payload["payment"]["type"] = const.PAYMENT_TYPE_SALE
+            payload["payment"]["capture"] = {
+                "descriptive": tx_sudo.reference,
+                "transaction_key": tx_sudo.reference,
+            }
 
         return self._easypay_make_request("/2.0/checkout", payload)
 
     def _build_order_items(self, tx_sudo):
         """Extract order items from transaction."""
         # Try to get items from sale order
-        if hasattr(tx_sudo, "sale_order_ids") and tx_sudo.sale_order_ids:
-            order = tx_sudo.sale_order_ids[0]
-            return self._build_items_from_lines(order.order_line)
+        if tx_sudo.sale_order_ids:
+            return [
+                self._build_item_from_line(line, line.product_uom_qty)
+                for line in tx_sudo.sale_order_ids[0].order_line
+            ]
 
-        # Try to get items from invoice
-        if hasattr(tx_sudo, "invoice_ids") and tx_sudo.invoice_ids:
-            invoice = tx_sudo.invoice_ids[0]
-            return self._build_items_from_lines(invoice.invoice_line_ids)
+        if tx_sudo.invoice_ids:
+            return [
+                self._build_item_from_line(line, line.quantity)
+                for line in tx_sudo.invoice_ids[0].invoice_line_ids
+            ]
 
         # Fallback to generic payment item
         return [
@@ -238,28 +246,37 @@ class PaymentProvider(models.Model):
             }
         ]
 
-    def _build_items_from_lines(self, lines):
-        """Build order items from line records."""
-        return [
-            {
-                "description": line.product_id.name or line.name,
-                "quantity": int(
-                    line.product_uom_qty
-                    if hasattr(line, "product_uom_qty")
-                    else line.quantity
-                ),
-                "key": str(line.id),
-                "value": float(line.price_total),
-            }
-            for line in lines
-        ]
+    def _build_item_from_line(self, line, quantity):
+        """Build a single order item dict from a line record."""
+        return {
+            "description": line.product_id.name or line.name,
+            "quantity": int(quantity),
+            "key": str(line.id),
+            "value": float(line.price_total),
+        }
+
+    def _build_customer_data(self, tx_sudo):
+        """Build EasyPay customer payload from transaction partner."""
+        return {
+            "name": tx_sudo.partner_name or "",
+            "email": tx_sudo.partner_email or "",
+            "phone": tx_sudo.partner_phone or "",
+            "key": str(tx_sudo.partner_id.id),
+        }
 
     def _easypay_create_single_payment(self, tx_sudo):
         """Create EasyPay single payment for the transaction."""
+        payment_methods = self.easypay_payment_method_ids
+        if not payment_methods:
+            payment_methods = self.env["easypay.payment.method"].search(
+                [("code", "=", "cc")]
+            )
+        method_code = payment_methods[0].code
+
         return_url = f"{tx_sudo.provider_id.get_base_url()}/payment/easypay/return"
         payload = {
             "type": const.PAYMENT_TYPE_SALE,
-            "method": "cc",
+            "method": method_code,
             "value": tx_sudo.amount,
             "currency": tx_sudo.currency_id.name,
             "key": tx_sudo.reference,
@@ -267,7 +284,7 @@ class PaymentProvider(models.Model):
                 "descriptive": tx_sudo.reference,
                 "transaction_key": tx_sudo.reference,
             },
-            "customer": easypay_utils.include_customer_data(tx_sudo),
+            "customer": self._build_customer_data(tx_sudo),
             "return_url": return_url,
         }
         return self._easypay_make_request("/2.0/single", payload)
