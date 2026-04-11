@@ -3,14 +3,16 @@
     <!-- EasyPay Checkout Page Template -->
     <template id="checkout_page" name="EasyPay Checkout Page">
         <t t-call="web.layout">
-            <head>
-                <title>Secure Payment - EasyPay</title>
-                <meta charset="utf-8" />
+            <t t-set="title">Secure Payment | EasyPay</t>
+            <t t-set="head">
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <link
                     href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
                     rel="stylesheet"
                 />
+                <style>
+                    #easypay-checkout, #easypay-checkout > * { width: 100% !important; max-width: 100% !important; }
+                </style>
                 <script>
                     window.easyPayData = <t t-out="easypay_data_json" />;
                 </script>
@@ -18,11 +20,11 @@
                     src="https://cdn.easypay.pt/checkout/2.9.1/"
                     onerror="document.getElementById('payment-loading').style.display='none';document.getElementById('payment-error').style.display='block';"
                 />
-            </head>
+            </t>
             <body>
-                <div class="container mt-5">
+                <div class="container-lg mt-5">
                     <div class="row justify-content-center">
-                        <div class="col-md-8">
+                        <div class="col-12 col-lg-10">
                             <div class="card shadow">
                                 <div class="card-body">
                                     <h1 class="text-center mb-4">Secure Payment</h1>

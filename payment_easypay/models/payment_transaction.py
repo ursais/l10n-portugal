@@ -44,6 +44,21 @@ class PaymentTransaction(models.Model):
         help="The capture status (paid, pending, authorised, etc.)",
         readonly=True,
     )
+    easypay_mb_entity = fields.Char(
+        string="MB Entity",
+        help="Multibanco entity number for the payment reference",
+        readonly=True,
+    )
+    easypay_mb_reference = fields.Char(
+        string="MB Reference",
+        help="Multibanco reference number for the payment",
+        readonly=True,
+    )
+    easypay_mb_expiration = fields.Char(
+        string="MB Expiration",
+        help="Expiration date/time for the Multibanco reference",
+        readonly=True,
+    )
     easypay_payment_details = fields.Json(
         string="EasyPay Payment Details",
         help="Full payment details from EasyPay webhook",
@@ -119,6 +134,15 @@ class PaymentTransaction(models.Model):
             or notification_data.get("payment_status")
             or payment_data.get("status")
         )
+        _logger.debug(
+            "[N1] processing notification for tx=%s: raw_status=%s method=%s "
+            "payment_id=%s capture_id=%s",
+            self.reference,
+            status,
+            payment_method,
+            payment_id,
+            payment_data.get("capture", {}).get("id"),
+        )
 
         capture_status = payment_data.get("status") or status
 
@@ -153,25 +177,37 @@ class PaymentTransaction(models.Model):
             None,
         )
 
+        _logger.debug(
+            "[N2] status=%r mapped to payment_state=%r (tx current state=%s)",
+            status,
+            payment_state,
+            self.state,
+        )
+
         if payment_state == "pending":
+            _logger.debug("[N3] -> _set_pending")
             self._set_pending()
         elif payment_state == "authorized":
+            _logger.debug("[N3] -> _set_authorized")
             self._set_authorized()
         elif payment_state == "done":
+            _logger.debug("[N3] -> _set_done")
             self._set_done()
         elif payment_state == "cancel":
+            _logger.debug("[N3] -> _set_canceled")
             self._set_canceled()
         elif payment_state == "error":
             error_msg = notification_data.get("message", ["Payment failed"])
             if isinstance(error_msg, list):
                 error_msg = ", ".join(str(m) for m in error_msg)
+            _logger.debug("[N3] -> _set_error: %s", error_msg)
             self._set_error(error_msg)
         elif self.state == "draft":
             # No recognisable status yet (e.g. async method still waiting for
             # user action) — move to pending so the status page shows something
             # meaningful. A later webhook will advance the state.
             _logger.info(
-                "transaction %s has unrecognised status %r while in draft; "
+                "[N3] transaction %s has unrecognised status %r while in draft; "
                 "setting pending until webhook confirms",
                 self.reference,
                 status,
@@ -179,7 +215,7 @@ class PaymentTransaction(models.Model):
             self._set_pending()
         else:
             _logger.warning(
-                "received notification for transaction with reference %s "
+                "[N3] received notification for transaction with reference %s "
                 "with unknown status: %s",
                 self.reference,
                 status,

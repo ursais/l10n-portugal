@@ -1,3 +1,7 @@
+> **Currency requirement:** EasyPay only supports **EUR**. The provider is
+> pre-configured to appear only for EUR transactions and will be hidden
+> automatically when the customer's currency is different.
+
 ## 1. Create an EasyPay Account
 
 - **Test environment**: Sign up at <https://backoffice.test.easypay.pt/>

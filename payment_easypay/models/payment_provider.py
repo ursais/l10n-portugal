@@ -8,6 +8,10 @@ import requests
 from odoo import _, fields, models
 from odoo.exceptions import ValidationError
 
+from odoo.addons.phone_validation.tools.phone_validation import (
+    phone_get_region_data_for_number,
+)
+
 from .. import const
 from ..controllers.main import EasyPayController
 
@@ -34,7 +38,7 @@ class PaymentProvider(models.Model):
         string="Payment Methods",
         help="Select the payment methods to enable for EasyPay",
         default=lambda self: self.env["easypay.payment.method"].search(
-            [("code", "=", "cc")]
+            [("code", "in", ["cc", "mb", "mbw"])]
         ),
     )
     easypay_webhook_base_url = fields.Char(
@@ -66,6 +70,13 @@ class PaymentProvider(models.Model):
                 provider.easypay_webhook_base_url = False
 
     # === BUSINESS METHODS - GETTERS ===#
+
+    def _get_supported_currencies(self):
+        """Override to restrict EasyPay to EUR only."""
+        self.ensure_one()
+        if self.code != "easypay":
+            return super()._get_supported_currencies()
+        return self.env["res.currency"].search([("name", "=", "EUR")])
 
     def _get_default_payment_method_codes(self):
         """Override of `payment` to return the default payment method codes."""
@@ -243,12 +254,27 @@ class PaymentProvider(models.Model):
 
     def _build_customer_data(self, tx_sudo):
         """Build EasyPay customer payload from transaction partner."""
-        return {
+        phone = tx_sudo.partner_phone or ""
+        phone_indicative = ""
+        phone_number = phone
+
+        if phone:
+            region = phone_get_region_data_for_number(phone)
+            if region["phone_code"] and region["national_number"]:
+                phone_indicative = region["phone_code"]
+                phone_number = region["national_number"]
+
+        data = {
             "name": tx_sudo.partner_name or "",
             "email": tx_sudo.partner_email or "",
-            "phone": tx_sudo.partner_phone or "",
             "key": str(tx_sudo.partner_id.id),
         }
+        if phone_indicative:
+            data["phone_indicative"] = phone_indicative
+            data["phone"] = phone_number
+        elif phone_number:
+            data["phone"] = phone_number
+        return data
 
     def action_easypay_test_connection(self):
         """Test connection to EasyPay API using ping endpoint."""
@@ -259,19 +285,28 @@ class PaymentProvider(models.Model):
                 "Please fill in Account ID and API Key first.", "warning"
             )
 
-        try:
-            response = self._easypay_make_request("/2.0/system/ping", method="GET")
-            if response and response.get("environment"):
-                return self._notify_user(
-                    "Connection successful! EasyPay API is reachable.", "success"
+        ping = self._easypay_make_request("/2.0/system/ping", method="GET")
+        messages = [
+            f"Connection successful! Environment: {ping.get('environment', 'unknown')}."
+        ]
+
+        config = self._easypay_make_request("/2.0/config", method="GET")
+        if config:
+            base_url = self.get_base_url()
+            registered_url = config.get("generic", "").split(
+                EasyPayController._generic_webhook_url
+            )[0]
+            if registered_url and registered_url != base_url:
+                messages.append(
+                    f"Webhook URLs point to '{registered_url}', "
+                    f"expected '{base_url}'. "
+                    f"Click 'Configure Webhooks' to update."
                 )
+                return self._notify_user("\n".join(messages), "warning", sticky=True)
             else:
-                return self._notify_user(
-                    "Connection test failed. Please check your credentials.", "danger"
-                )
-        except Exception as e:
-            _logger.exception("EasyPay connection test failed: %s", e)
-            return self._notify_user(f"Connection test failed: {str(e)}", "danger")
+                messages.append("Webhook URLs are correctly configured.")
+
+        return self._notify_user("\n".join(messages), "success", sticky=True)
 
     def action_easypay_configure_webhooks(self):
         if not self.easypay_api_key or not self.easypay_account_id:
@@ -288,8 +323,6 @@ class PaymentProvider(models.Model):
                 f"{base_url}{EasyPayController._authorisation_webhook_url}"
             ),
             "transaction": f"{base_url}{EasyPayController._transaction_webhook_url}",
-            "visa_fwd": f"{base_url}{EasyPayController._return_url}",
-            "visa_detail": f"{base_url}{EasyPayController._return_url}",
         }
 
         try:
@@ -304,7 +337,7 @@ class PaymentProvider(models.Model):
                 "danger",
             )
 
-    def _notify_user(self, message, notification_type):
+    def _notify_user(self, message, notification_type, sticky=False):
         """Helper method to notify user with feedback."""
         return {
             "type": "ir.actions.client",
@@ -312,6 +345,6 @@ class PaymentProvider(models.Model):
             "params": {
                 "message": message,
                 "type": notification_type,
-                "sticky": notification_type == "danger",
+                "sticky": sticky or notification_type == "danger",
             },
         }

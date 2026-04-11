@@ -21,10 +21,12 @@
     var sessionId = data.sessionId;
     var isTestMode = !data.apiUrl || data.apiUrl.includes("test");
 
+    var successHandled = false;
     var checkoutInstance = window.easypayCheckout.startCheckout(data.manifest, {
         display: "inline",
         testing: isTestMode,
         onSuccess: function (successInfo) {
+            successHandled = true;
             var payment = (successInfo && successInfo.payment) || {};
             var params = new URLSearchParams({
                 id: sessionId,
@@ -33,6 +35,11 @@
             });
             if (payment.id) {
                 params.set("payment_id", payment.id);
+            }
+            if (payment.entity && payment.reference) {
+                params.set("entity", payment.entity);
+                params.set("mb_reference", payment.reference);
+                params.set("expiration", payment.expirationDate || "");
             }
             checkoutInstance.unmount();
             window.location.href =
@@ -66,7 +73,9 @@
         },
         onClose: function () {
             checkoutInstance.unmount();
-            window.location.href = "/payment/status";
+            if (!successHandled) {
+                window.location.href = "/payment/status";
+            }
         },
     });
 })();

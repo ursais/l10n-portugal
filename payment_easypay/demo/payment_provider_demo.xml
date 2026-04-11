@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<odoo noupdate="0">
+<odoo noupdate="1">
     <record id="payment_provider_easypay" model="payment.provider">
         <field name="name">EasyPay Demo</field>
         <field name="code">easypay</field>
         <field name="state">test</field>
         <field name="easypay_account_id">2b0f63e2-9fb5-4e52-aca0-b4bf0339bbe6</field>
         <field name="easypay_api_key">eae4aa59-8e5b-4ec2-887d-b02768481a92</field>
-        <field name="easypay_payment_method_ids" eval="[(6, 0, [])]" />
-        <field name="easypay_use_checkout">True</field>
+        <field
+            name="payment_method_ids"
+            eval="[(4, ref('payment.payment_method_card')), (4, ref('payment.payment_method_multibanco')), (4, ref('payment.payment_method_mbway'))]"
+        />
+        <field
+            name="easypay_payment_method_ids"
+            eval="[(6, 0, [ref('payment_easypay.payment_method_cc'), ref('payment_easypay.payment_method_mb'), ref('payment_easypay.payment_method_mbw')])]"
+        />
     </record>
 </odoo>

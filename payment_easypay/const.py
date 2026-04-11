@@ -21,9 +21,9 @@ PAYMENT_TYPE_AUTHORISATION = "authorisation"
 # Status mapping
 STATUS_MAPPING = {
     "draft": (),
-    "pending": ("pending", "waiting"),
+    "pending": ("pending", "waiting", "success"),
     "authorized": ("authorized", "authorised"),
-    "done": ("success", "captured", "paid", "tokenized", "complete"),
+    "done": ("captured", "paid", "tokenized", "complete"),
     "cancel": ("cancelled", "canceled"),
     "error": ("failed", "error"),
 }
