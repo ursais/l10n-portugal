@@ -29,6 +29,11 @@ class AccountChartTemplate(models.AbstractModel):
                     + self.with_company(company).ref('demo_move_auto_reconcile_8')
                     + self.with_company(company).ref('demo_move_auto_reconcile_9')
             )
+
+            # >> Avoid errors with demo data
+            return super()._post_load_demo_data(company)
+            # <<
+
             # we need to ensure AT Series created after the moves are added to the demo moves
             invoices._compute_l10n_pt_at_series_id()
             for move in invoices:
