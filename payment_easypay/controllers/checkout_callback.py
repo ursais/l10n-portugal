@@ -80,7 +80,7 @@ class EasyPayCheckoutCallbackController(http.Controller):
             return werkzeug.utils.redirect("/payment/status", code=303)
 
         try:
-            tx_sudo._handle_notification_data("easypay", payment_data)
+            tx_sudo._process("easypay", payment_data)
         except Exception as e:
             _logger.exception(
                 "Error processing polled data for %s: %s", tx_sudo.reference, e

@@ -4,7 +4,7 @@
 import logging
 import time
 
-from odoo import _, fields, models
+from odoo import fields, models
 from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
@@ -80,29 +80,48 @@ class PaymentTransaction(models.Model):
             )
         return self.browse()
 
-    def _process_notification_data(self, notification_data):
-        """Override of payment to process the notification data."""
-        super()._process_notification_data(notification_data)
-        if self.provider_code != "easypay":
-            return
+    def _extract_amount_data(self, payment_data):
+        """Extract amount data from payment data.
 
-        # Extract relevant data from notification
-        payment_id = notification_data.get("id")
-        payment_data = notification_data.get("payment", {})
-        _methods = payment_data.get("methods") or []
-        payment_method = payment_data.get("method") or (
+        /checkout responses have 'value' at top level.
+        /single responses don't include amount, so skip validation.
+        """
+        if self.provider_code != "easypay":
+            return super()._extract_amount_data(payment_data)
+
+        amount = payment_data.get("value")
+        if amount is None or amount == 0:
+            return None  # Skip validation for /single or zero-value payments
+
+        return {
+            "amount": amount,
+            "currency_code": self.currency_id.name,
+        }
+
+    def _apply_updates(self, payment_data):
+        """Override of payment to process the payment data."""
+        if self.provider_code != "easypay":
+            return super()._apply_updates(payment_data)
+
+        # Extract relevant data from payment data
+        payment_id = payment_data.get("id")
+        inner_payment_data = payment_data.get("payment", {})
+        _methods = inner_payment_data.get("methods") or []
+        payment_method = inner_payment_data.get("method") or (
             _methods[0] if _methods else None
         )
 
         # _resolved_status: injected by the webhook controller after resolving
         # EasyPay's event-level "success" to a concrete payment status.
         # payment.status: from Checkout GET response (sync poll path).
-        status = notification_data.get("_resolved_status") or payment_data.get("status")
+        status = payment_data.get("_resolved_status") or inner_payment_data.get(
+            "status"
+        )
         _logger.debug(
             "Processing notification for %s: status=%r (resolved=%r raw=%r) method=%s",
             self.reference,
             status,
-            notification_data.get("_resolved_status"),
+            payment_data.get("_resolved_status"),
             payment_data.get("status"),
             payment_method,
         )
@@ -114,7 +133,7 @@ class PaymentTransaction(models.Model):
         # Capture transaction ID — needed for refunds and manual capture.
         # Checkout flow nests it under payment.capture.id;
         # single flow nests it under capture.id.
-        capture_id = payment_data.get("capture", {}).get("id") or notification_data.get(
+        capture_id = payment_data.get("capture", {}).get("id") or payment_data.get(
             "capture", {}
         ).get("id")
         if capture_id and not self.easypay_transaction_id:
@@ -124,7 +143,7 @@ class PaymentTransaction(models.Model):
             self.easypay_payment_method = payment_method
         if status:
             self.easypay_capture_status = status
-        self.easypay_payment_details = notification_data
+        self.easypay_payment_details = payment_data
 
         # Create token for frequent (tokenized) payments.
         # The token references the EasyPay payment ID (payment.id in checkout,
@@ -172,9 +191,9 @@ class PaymentTransaction(models.Model):
                 )
                 self._set_error(str(e))
         else:
-            self._apply_payment_state(status, notification_data)
+            self._apply_payment_state(status, payment_data)
 
-    def _apply_payment_state(self, status, notification_data):
+    def _apply_payment_state(self, status, payment_data):
         """Map an EasyPay status string to an Odoo state transition."""
         if status in ("pending", "waiting", "success"):
             self._set_pending()
@@ -185,7 +204,7 @@ class PaymentTransaction(models.Model):
         elif status in ("cancelled", "canceled"):
             self._set_canceled()
         elif status in ("failed", "error"):
-            error_msg = notification_data.get("message", ["Payment failed"])
+            error_msg = payment_data.get("message", ["Payment failed"])
             if isinstance(error_msg, list):
                 error_msg = ", ".join(str(m) for m in error_msg)
             self._set_error(error_msg)
@@ -275,11 +294,13 @@ class PaymentTransaction(models.Model):
 
         if not self.token_id:
             raise ValidationError(
-                _("Cannot charge: No payment token found for this transaction.")
+                self.env._(
+                    "Cannot charge: No payment token found for this transaction."
+                )
             )
         if not self.token_id.provider_ref:
             raise ValidationError(
-                _("Cannot charge: Payment token has no EasyPay reference.")
+                self.env._("Cannot charge: Payment token has no EasyPay reference.")
             )
         self._easypay_capture(self.token_id.provider_ref)
         # The capture is submitted; the webhook will confirm the final state.
@@ -288,7 +309,9 @@ class PaymentTransaction(models.Model):
     def _send_refund_request(self, amount_to_refund=None):
         """Send refund request to EasyPay."""
         if self.provider_code == "easypay" and not self.easypay_transaction_id:
-            raise ValidationError(_("Cannot refund: No capture transaction ID found."))
+            raise ValidationError(
+                self.env._("Cannot refund: No capture transaction ID found.")
+            )
 
         refund_tx = super()._send_refund_request(amount_to_refund=amount_to_refund)
         if self.provider_code != "easypay":
@@ -309,7 +332,9 @@ class PaymentTransaction(models.Model):
             return super()._send_capture_request()
         if not self.provider_reference:
             raise ValidationError(
-                _("Cannot capture: No EasyPay payment ID found for this transaction.")
+                self.env._(
+                    "Cannot capture: No EasyPay payment ID found for this transaction."
+                )
             )
         self._easypay_capture(self.provider_reference)
         self._set_done()
@@ -388,7 +413,9 @@ class PaymentTransaction(models.Model):
 
         if not self.provider_reference:
             raise ValidationError(
-                _("Cannot void: No EasyPay payment ID found for this transaction.")
+                self.env._(
+                    "Cannot void: No EasyPay payment ID found for this transaction."
+                )
             )
         self.provider_id._easypay_make_request(
             f"/2.0/authorisation/{self.provider_reference}/void"

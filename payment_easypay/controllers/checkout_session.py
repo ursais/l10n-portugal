@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 class EasyPayCheckoutSessionController(http.Controller):
     @http.route(
         "/payment/easypay/create_checkout_session",
-        type="json",
+        type="jsonrpc",
         auth="public",
         website=True,
     )

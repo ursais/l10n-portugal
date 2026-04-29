@@ -103,11 +103,11 @@ class EasyPayWebhookController(http.Controller):
         if event_type == "capture":
             payment_data = self._fetch_payment_data(tx_sudo)
             payment_data["_resolved_status"] = "paid"
-            tx_sudo._handle_notification_data("easypay", payment_data)
+            tx_sudo._process("easypay", payment_data)
         elif event_type == "void":
             payment_data = self._fetch_payment_data(tx_sudo)
             payment_data["_resolved_status"] = "cancelled"
-            tx_sudo._handle_notification_data("easypay", payment_data)
+            tx_sudo._process("easypay", payment_data)
         elif event_type == "refund":
             self._handle_refund_webhook(tx_sudo, tx_data)
         else:
@@ -141,7 +141,7 @@ class EasyPayWebhookController(http.Controller):
             tx_sudo.provider_reference = payment_id
         payment_data = self._fetch_payment_data(tx_sudo)
         payment_data["_resolved_status"] = resolved_status
-        tx_sudo._handle_notification_data("easypay", payment_data)
+        tx_sudo._process("easypay", payment_data)
         return request.make_json_response({}, status=200)
 
     def _handle_refund_webhook(self, source_tx, tx_data):

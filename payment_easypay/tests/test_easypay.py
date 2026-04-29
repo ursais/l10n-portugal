@@ -100,7 +100,7 @@ class TestEasyPay(TransactionCase):
         call_args = mock_request.call_args
         payload = call_args[1]["json"]
         self.assertEqual(payload["type"], ["single"])
-        self.assertEqual(payload["payment"]["methods"], ["cc"])
+        self.assertEqual(payload["payment"]["methods"], ["card"])
         self.assertEqual(payload["payment"]["currency"], "EUR")
         self.assertEqual(payload["order"]["value"], 100.0)
 
@@ -123,7 +123,7 @@ class TestEasyPay(TransactionCase):
             "_resolved_status": "paid",
         }
 
-        tx._process_notification_data(notification_data)
+        tx._process("easypay", notification_data)
         self.assertEqual(tx.state, "done")
         self.assertEqual(tx.provider_reference, "payment-123")
 
@@ -147,7 +147,7 @@ class TestEasyPay(TransactionCase):
             "message": ["Payment declined"],
         }
 
-        tx._process_notification_data(notification_data)
+        tx._process("easypay", notification_data)
         self.assertEqual(tx.state, "error")
 
     def test_notification_processing_authorized(self):
@@ -170,7 +170,7 @@ class TestEasyPay(TransactionCase):
             "type": "authorisation",
         }
 
-        tx._process_notification_data(notification_data)
+        tx._process("easypay", notification_data)
         self.assertEqual(tx.state, "authorized")
         self.assertEqual(tx.provider_reference, "payment-auth-123")
 

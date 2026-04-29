@@ -6,7 +6,7 @@ from datetime import date, timedelta
 
 import requests
 
-from odoo import _, fields, models
+from odoo import fields, models
 from odoo.exceptions import ValidationError
 
 from odoo.addons.phone_validation.tools.phone_validation import (
@@ -132,7 +132,9 @@ class PaymentProvider(models.Model):
             return response.json()
         except requests.exceptions.RequestException as e:
             _logger.error("EasyPay API request failed: %s", e)
-            raise ValidationError(_("EasyPay API request failed: %s", str(e))) from None
+            raise ValidationError(
+                self.env._("EasyPay API request failed: %s", str(e))
+            ) from None
 
     def _easypay_raise_for_status(self, response, label="Request"):
         """Raise ValidationError if EasyPay response status is not 'ok'.
@@ -146,7 +148,7 @@ class PaymentProvider(models.Model):
             if isinstance(msg, list):
                 msg = ", ".join(str(m) for m in msg)
             raise ValidationError(
-                _("EasyPay %(label)s failed: %(msg)s", label=label, msg=msg)
+                self.env._("EasyPay %(label)s failed: %(msg)s", label=label, msg=msg)
             )
 
     def _easypay_create_checkout_session(self, tx_sudo):
