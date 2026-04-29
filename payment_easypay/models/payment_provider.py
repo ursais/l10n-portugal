@@ -312,8 +312,7 @@ class PaymentProvider(models.Model):
             "tag": "display_notification",
             "params": {
                 "message": (
-                    f"Payment methods updated: "
-                    f"{', '.join(m.name for m in api_methods)}"
+                    f"Payment methods updated: {', '.join(m.name for m in api_methods)}"
                 ),
                 "type": "success",
                 "sticky": True,
