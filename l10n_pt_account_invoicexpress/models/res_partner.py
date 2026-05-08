@@ -12,12 +12,6 @@ class ResPartner(models.Model):
         copy=False,
         company_dependent=True,
     )
-    invoicexpress_id = fields.Char(
-        "InvoiceXpress ID",
-        copy=False,
-        readonly=True,
-        help="Deprecated: will be removed in future versions",
-    )
 
     def _prepare_invoicexpress_vals(self):
         self.ensure_one()
