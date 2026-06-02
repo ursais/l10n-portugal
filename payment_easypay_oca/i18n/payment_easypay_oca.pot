@@ -6,14 +6,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-11 18:28+0000\n"
-"PO-Revision-Date: 2026-04-11 18:28+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: payment_easypay_oca
+#: model_terms:ir.ui.view,arch_db:payment_easypay_oca.payment_provider_form_easypay
+msgid ""
+"<i class=\"oi oi-fw o_button_icon oi-refresh\"/>\n"
+"                        Sync Payment Methods from EasyPay"
+msgstr ""
 
 #. module: payment_easypay_oca
 #: model_terms:ir.ui.view,arch_db:payment_easypay_oca.mb_reference_page
@@ -50,7 +55,6 @@ msgid "An error occurred while loading the payment form. Please try again."
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:easypay.payment.method,name:payment_easypay_oca.payment_method_ap
 #: model:payment.method,name:payment_easypay_oca.payment_method_apple_pay
 msgid "Apple Pay"
 msgstr ""
@@ -58,6 +62,11 @@ msgstr ""
 #. module: payment_easypay_oca
 #: model:ir.model.fields,help:payment_easypay_oca.field_payment_provider__easypay_webhook_base_url
 msgid "Base URL that will be used for webhook configuration in EasyPay"
+msgstr ""
+
+#. module: payment_easypay_oca
+#: model:ir.model.fields.selection,name:payment_easypay_oca.selection__payment_provider__easypay_mb_product__checkdigit
+msgid "CHECKDIGIT"
 msgstr ""
 
 #. module: payment_easypay_oca
@@ -121,11 +130,6 @@ msgid "Created on"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:easypay.payment.method,name:payment_easypay_oca.payment_method_cc
-msgid "Credit/Debit Card"
-msgstr ""
-
-#. module: payment_easypay_oca
 #: model:ir.model.fields,field_description:payment_easypay_oca.field_easypay_payment_method__display_name
 msgid "Display Name"
 msgstr ""
@@ -168,7 +172,11 @@ msgid "EasyPay Details"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:ir.model.fields,field_description:payment_easypay_oca.field_payment_provider__easypay_payment_method_ids
+#: model:payment.method,name:payment_easypay_oca.payment_method_easypay_direct_debit
+msgid "EasyPay Direct Debit"
+msgstr ""
+
+#. module: payment_easypay_oca
 #: model_terms:ir.ui.view,arch_db:payment_easypay_oca.payment_provider_form_easypay
 msgid "EasyPay Options"
 msgstr ""
@@ -221,9 +229,13 @@ msgid "Go Back"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:easypay.payment.method,name:payment_easypay_oca.payment_method_gp
 #: model:payment.method,name:payment_easypay_oca.payment_method_google_pay
 msgid "Google Pay"
+msgstr ""
+
+#. module: payment_easypay_oca
+#: model:ir.model.fields,field_description:payment_easypay_oca.field_payment_provider__easypay_hide_details
+msgid "Hide Customer Details Form"
 msgstr ""
 
 #. module: payment_easypay_oca
@@ -257,13 +269,18 @@ msgid "MB Expiration"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:ir.model.fields,field_description:payment_easypay_oca.field_payment_transaction__easypay_mb_reference
-msgid "MB Reference"
+#: model:ir.model.fields,field_description:payment_easypay_oca.field_payment_provider__easypay_mb_expiration_days
+msgid "MB Expiration Days"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:easypay.payment.method,name:payment_easypay_oca.payment_method_mbw
-msgid "MB WAY"
+#: model:ir.model.fields,field_description:payment_easypay_oca.field_payment_provider__easypay_mb_product
+msgid "MB Product Type"
+msgstr ""
+
+#. module: payment_easypay_oca
+#: model:ir.model.fields,field_description:payment_easypay_oca.field_payment_transaction__easypay_mb_reference
+msgid "MB Reference"
 msgstr ""
 
 #. module: payment_easypay_oca
@@ -277,7 +294,6 @@ msgid "Method Name"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:easypay.payment.method,name:payment_easypay_oca.payment_method_mb
 #: model_terms:ir.ui.view,arch_db:payment_easypay_oca.mb_reference_page
 msgid "Multibanco"
 msgstr ""
@@ -298,8 +314,13 @@ msgid "Multibanco reference number for the payment"
 msgstr ""
 
 #. module: payment_easypay_oca
+#: model:ir.model.fields,help:payment_easypay_oca.field_payment_provider__easypay_mb_expiration_days
+msgid "Number of days before a Multibanco reference expires."
+msgstr ""
+
+#. module: payment_easypay_oca
 #: model:payment.method,name:payment_easypay_oca.payment_method_easypay
-msgid "Other payment methods (EasyPay)"
+msgid "Other trusted payment methods"
 msgstr ""
 
 #. module: payment_easypay_oca
@@ -338,13 +359,11 @@ msgid "Reference:"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:easypay.payment.method,name:payment_easypay_oca.payment_method_dd
-#: model:payment.method,name:payment_easypay_oca.payment_method_sepa_direct_debit
-msgid "SEPA Direct Debit"
+#: model:ir.model.fields.selection,name:payment_easypay_oca.selection__payment_provider__easypay_mb_product__spg
+msgid "SPG"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:easypay.payment.method,name:payment_easypay_oca.payment_method_sw
 #: model:payment.method,name:payment_easypay_oca.payment_method_samsung_pay
 msgid "Samsung Pay"
 msgstr ""
@@ -360,11 +379,6 @@ msgid "Secure Payment | EasyPay"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:ir.model.fields,help:payment_easypay_oca.field_payment_provider__easypay_payment_method_ids
-msgid "Select the payment methods to enable for EasyPay"
-msgstr ""
-
-#. module: payment_easypay_oca
 #: model_terms:ir.ui.view,arch_db:payment_easypay_oca.payment_provider_form_easypay
 msgid "Test Connection"
 msgstr ""
@@ -377,6 +391,13 @@ msgstr ""
 #. module: payment_easypay_oca
 #: model:ir.model.fields,help:payment_easypay_oca.field_payment_provider__easypay_account_id
 msgid "The Account ID provided by EasyPay"
+msgstr ""
+
+#. module: payment_easypay_oca
+#: model:ir.model.fields,help:payment_easypay_oca.field_payment_provider__easypay_mb_product
+msgid ""
+"The SPG product allows initiating refunds, but might have additional fees. "
+"Please check with your Easypay account manager for details."
 msgstr ""
 
 #. module: payment_easypay_oca
@@ -405,11 +426,6 @@ msgid "The transaction ID returned by EasyPay"
 msgstr ""
 
 #. module: payment_easypay_oca
-#: model:easypay.payment.method,name:payment_easypay_oca.payment_method_vi
-msgid "Virtual IBAN"
-msgstr ""
-
-#. module: payment_easypay_oca
 #: model:payment.method,name:payment_easypay_oca.payment_method_virtual_iban
 msgid "Virtual IBAN (Bank Transfer)"
 msgstr ""
@@ -417,6 +433,13 @@ msgstr ""
 #. module: payment_easypay_oca
 #: model:ir.model.fields,field_description:payment_easypay_oca.field_payment_provider__easypay_webhook_base_url
 msgid "Webhook Base URL"
+msgstr ""
+
+#. module: payment_easypay_oca
+#: model:ir.model.fields,help:payment_easypay_oca.field_payment_provider__easypay_hide_details
+msgid ""
+"When enabled, the EasyPay Checkout SDK hides the order details panel and "
+"shows a collapsible summary instead. "
 msgstr ""
 
 #. module: payment_easypay_oca
@@ -438,4 +461,9 @@ msgstr ""
 #. module: payment_easypay_oca
 #: model_terms:payment.provider,done_msg:payment_easypay_oca.payment_provider_easypay
 msgid "Your payment has been successfully processed."
+msgstr ""
+
+#. module: payment_easypay_oca
+#: model_terms:ir.ui.view,arch_db:payment_easypay_oca.checkout_page
+msgid "← Return to cart"
 msgstr ""
