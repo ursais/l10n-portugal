@@ -23,8 +23,8 @@
     "demo": ["demo/payment_provider_demo.xml"],
     "assets": {
         "web.assets_frontend": [
-            "payment_easypay/static/src/js/payment_form.esm.js",
-            "payment_easypay/static/src/scss/payment_easypay.scss",
+            "payment_easypay_oca/static/src/js/payment_form.esm.js",
+            "payment_easypay_oca/static/src/scss/payment_easypay_oca.scss",
         ],
     },
     "installable": True,

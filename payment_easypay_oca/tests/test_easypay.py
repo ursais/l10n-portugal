@@ -68,7 +68,7 @@ class TestEasyPay(TransactionCase):
         self.assertEqual(tx.provider_code, "easypay")
         self.assertEqual(tx.amount, 100.0)
 
-    @patch("odoo.addons.payment_easypay.models.payment_provider.requests.request")
+    @patch("odoo.addons.payment_easypay_oca.models.payment_provider.requests.request")
     def test_create_checkout_session(self, mock_request):
         """Test creating a checkout session with mocked API."""
         mock_response = MagicMock()
@@ -174,8 +174,8 @@ class TestEasyPay(TransactionCase):
         self.assertEqual(tx.state, "authorized")
         self.assertEqual(tx.provider_reference, "payment-auth-123")
 
-    @patch("odoo.addons.payment_easypay.models.payment_provider.requests.request")
-    @mute_logger("odoo.addons.payment_easypay.models.payment_provider")
+    @patch("odoo.addons.payment_easypay_oca.models.payment_provider.requests.request")
+    @mute_logger("odoo.addons.payment_easypay_oca.models.payment_provider")
     def test_http_error_handling(self, mock_request):
         """Test that HTTP errors are properly handled and logged."""
         mock_response = MagicMock()
@@ -228,7 +228,7 @@ class TestEasyPayController(HttpCase):
         cls.currency = cls.env.ref("base.EUR")
         cls.payment_method = cls.env.ref("payment.payment_method_card")
 
-    @patch("odoo.addons.payment_easypay.models.payment_provider.requests.request")
+    @patch("odoo.addons.payment_easypay_oca.models.payment_provider.requests.request")
     def test_checkout_success_callback(self, mock_request):
         """Test checkout success callback fetches payment data and updates
         transaction.

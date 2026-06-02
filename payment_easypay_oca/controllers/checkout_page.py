@@ -66,6 +66,6 @@ class EasyPayCheckoutPageController(http.Controller):
         )
 
         return request.render(
-            "payment_easypay.checkout_page",
+            "payment_easypay_oca.checkout_page",
             {"easypay_data_json": easypay_data_json},
         )
