@@ -83,7 +83,7 @@
 
                 <script
                     type="text/javascript"
-                    src="/payment_easypay/static/src/js/checkout.js"
+                    src="/payment_easypay_oca/static/src/js/checkout.js"
                 />
             </body>
         </t>

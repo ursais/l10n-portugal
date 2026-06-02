@@ -110,7 +110,7 @@ class EasyPayCheckoutCallbackController(http.Controller):
         digits = raw_ref.replace(" ", "")
         formatted_ref = " ".join(digits[i : i + 3] for i in range(0, len(digits), 3))
         return request.render(
-            "payment_easypay.mb_reference_page",
+            "payment_easypay_oca.mb_reference_page",
             {
                 "tx": tx_sudo,
                 "entity": tx_sudo.easypay_mb_entity,
