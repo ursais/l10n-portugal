@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 =========================
 Payment Provider: EasyPay
 =========================
@@ -17,14 +13,14 @@ Payment Provider: EasyPay
 .. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
     :target: https://odoo-community.org/page/development-status
     :alt: Beta
-.. |badge2| image:: https://img.shields.io/badge/license-LGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-LGPL--3-blue.png
     :target: http://www.gnu.org/licenses/lgpl-3.0-standalone.html
     :alt: License: LGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fl10n--portugal-lightgray.png?logo=github
-    :target: https://github.com/OCA/l10n-portugal/tree/18.0/payment_easypay
+    :target: https://github.com/OCA/l10n-portugal/tree/18.0/payment_easypay_oca
     :alt: OCA/l10n-portugal
 .. |badge4| image:: https://img.shields.io/badge/weblate-Translate%20me-F47D42.png
-    :target: https://translation.odoo-community.org/projects/l10n-portugal-18-0/l10n-portugal-18-0-payment_easypay
+    :target: https://translation.odoo-community.org/projects/l10n-portugal-18-0/l10n-portugal-18-0-payment_easypay_oca
     :alt: Translate me on Weblate
 .. |badge5| image:: https://img.shields.io/badge/runboat-Try%20me-875A7B.png
     :target: https://runboat.odoo-community.org/builds?repo=OCA/l10n-portugal&target_branch=18.0
@@ -40,11 +36,17 @@ EasyPay is a Portuguese payment service provider that supports multiple
 payment methods including credit cards, Multibanco, MB WAY, SEPA Direct
 Debit, and more.
 
-Verified as supported: Credit/Debit Card payments, Multibanco (MB)
-reference payments, MB WAY.
+Verified as supported:
 
-Not yet implemented or verified: SEPA Direct Debit, Pay by Link,
-Multibanco reference on invoices.
+-  Credit/Debit Card payments,
+-  Multibanco (MB) reference payments,
+-  MB WAY.
+
+Not yet implemented or verified:
+
+-  SEPA Direct Debit,
+-  Pay by Link,
+-  Multibanco reference on invoices.
 
 Learn more about EasyPay at https://www.easypay.pt/
 
@@ -63,9 +65,9 @@ automatically when the customer's currency is different.
 1. Create an EasyPay Account
 ----------------------------
 
-- **Test environment**: Sign up at https://backoffice.test.easypay.pt/
-- **Production**: Sign up at https://www.easypay.pt/ and complete
-  merchant verification
+-  **Test environment**: Sign up at https://backoffice.test.easypay.pt/
+-  **Production**: Sign up at https://www.easypay.pt/ and complete
+   merchant verification
 
 Once logged in, note your **Account ID** and **API Key** (both UUID
 format) from the EasyPay dashboard.
@@ -78,20 +80,20 @@ format) from the EasyPay dashboard.
 2. Search for **EasyPay** and open the provider form
 3. Fill in:
 
-   - **Account ID** — from your EasyPay dashboard
-   - **API Key** — from your EasyPay dashboard (admin-only field)
-   - **Payment Methods** — select the methods to offer (Credit/Debit
-     Card, Multibanco, MB WAY, etc.)
-   - **Allow Saving Payment Methods** — when enabled, logged-in
-     customers can tick "Save my payment details" at checkout to
-     tokenize their card or SEPA Direct Debit mandate for future charges
-     (e.g. subscriptions). Enabled by default.
+   -  **Account ID** — from your EasyPay dashboard
+   -  **API Key** — from your EasyPay dashboard (admin-only field)
+   -  **Payment Methods** — select the methods to offer (Credit/Debit
+      Card, Multibanco, MB WAY, etc.)
+   -  **Allow Saving Payment Methods** — when enabled, logged-in
+      customers can tick "Save my payment details" at checkout to
+      tokenize their card or SEPA Direct Debit mandate for future
+      charges (e.g. subscriptions). Enabled by default.
 
 4. Set the provider **State**:
 
-   - **Test Mode** → uses ``https://api.test.easypay.pt`` and enables
-     the ``testing`` flag in the SDK automatically
-   - **Enabled** → uses ``https://api.prod.easypay.pt`` (production)
+   -  **Test Mode** → uses ``https://api.test.easypay.pt`` and enables
+      the ``testing`` flag in the SDK automatically
+   -  **Enabled** → uses ``https://api.prod.easypay.pt`` (production)
 
 5. Click **Save**
 
@@ -104,9 +106,9 @@ The simplest way to register them is to use the built-in button:
 1. On the EasyPay provider form, click **Configure Webhooks**
 2. Odoo will call ``PATCH /2.0/config`` on the EasyPay API and register:
 
-   - ``https://yourdomain.com/payment/easypay/webhook/generic``
-   - ``https://yourdomain.com/payment/easypay/webhook/authorisation``
-   - ``https://yourdomain.com/payment/easypay/webhook/transaction``
+   -  ``https://yourdomain.com/payment/easypay/webhook/generic``
+   -  ``https://yourdomain.com/payment/easypay/webhook/authorisation``
+   -  ``https://yourdomain.com/payment/easypay/webhook/transaction``
 
 If you need to register webhooks manually in the EasyPay dashboard, use
 the three URLs above. All three must be registered for all payment
@@ -147,29 +149,29 @@ Once configured, customers can use EasyPay to make payments:
 Payment method behaviour
 ------------------------
 
-- **Credit/Debit Card**: Payment is captured immediately. Order is
-  confirmed as soon as the card is charged.
-- **MB WAY**: The customer enters their mobile number. A push
-  notification is sent to their phone for confirmation. The order is
-  placed in *Pending* state until the user confirms (or rejects) on the
-  MB WAY app.
-- **Multibanco**: An ATM reference (Entity + Reference + Amount) is
-  displayed. The customer pays at any ATM or via online banking. The
-  order remains *Pending* until the payment is confirmed, which may take
-  minutes to days. The customer should **not** close the confirmation
-  page before noting down the reference.
-- **SEPA Direct Debit**: The customer enters their IBAN and accepts a
-  SEPA mandate authorizing EasyPay to debit their account. The order
-  remains *Pending* until the bank settles the debit (typically 2–5
-  business days). When used with tokenization, the mandate is saved and
-  subsequent charges are pulled automatically.
-- **Virtual IBAN**: A dedicated IBAN is displayed. The customer
-  transfers the exact amount via online banking. The order remains
-  *Pending* until the transfer is received and matched by EasyPay.
-- **Save payment details (tokenization)**: Logged-in customers can tick
-  *Save my payment details* at checkout. The payment method is saved as
-  a token for future charges (e.g. subscriptions). This works with cards
-  and SEPA Direct Debit.
+-  **Credit/Debit Card**: Payment is captured immediately. Order is
+   confirmed as soon as the card is charged.
+-  **MB WAY**: The customer enters their mobile number. A push
+   notification is sent to their phone for confirmation. The order is
+   placed in *Pending* state until the user confirms (or rejects) on the
+   MB WAY app.
+-  **Multibanco**: An ATM reference (Entity + Reference + Amount) is
+   displayed. The customer pays at any ATM or via online banking. The
+   order remains *Pending* until the payment is confirmed, which may
+   take minutes to days. The customer should **not** close the
+   confirmation page before noting down the reference.
+-  **SEPA Direct Debit**: The customer enters their IBAN and accepts a
+   SEPA mandate authorizing EasyPay to debit their account. The order
+   remains *Pending* until the bank settles the debit (typically 2–5
+   business days). When used with tokenization, the mandate is saved and
+   subsequent charges are pulled automatically.
+-  **Virtual IBAN**: A dedicated IBAN is displayed. The customer
+   transfers the exact amount via online banking. The order remains
+   *Pending* until the transfer is received and matched by EasyPay.
+-  **Save payment details (tokenization)**: Logged-in customers can tick
+   *Save my payment details* at checkout. The payment method is saved as
+   a token for future charges (e.g. subscriptions). This works with
+   cards and SEPA Direct Debit.
 
 Refunds
 -------
@@ -199,7 +201,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/OCA/l10n-portugal/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/OCA/l10n-portugal/issues/new?body=module:%20payment_easypay%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/OCA/l10n-portugal/issues/new?body=module:%20payment_easypay_oca%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -214,9 +216,9 @@ Authors
 Contributors
 ------------
 
-- Open Source Integrators <https://www.opensourceintegrators.com>
+-  Open Source Integrators <https://www.opensourceintegrators.com>
 
-  - Daniel Reis (dreis@opensourceintegrators.com)
+   -  Daniel Reis (dreis@opensourceintegrators.com)
 
 This work was developed with the aid of AI tools under human guidance
 and supervision, specifically Cascade (IDE coding assistant) and
@@ -236,6 +238,6 @@ OCA, or the Odoo Community Association, is a nonprofit organization whose
 mission is to support the collaborative development of Odoo features and
 promote its widespread use.
 
-This module is part of the `OCA/l10n-portugal <https://github.com/OCA/l10n-portugal/tree/18.0/payment_easypay>`_ project on GitHub.
+This module is part of the `OCA/l10n-portugal <https://github.com/OCA/l10n-portugal/tree/18.0/payment_easypay_oca>`_ project on GitHub.
 
 You are welcome to contribute. To learn how please visit https://odoo-community.org/page/Contribute.

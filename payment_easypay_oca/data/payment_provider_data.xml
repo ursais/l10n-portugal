@@ -18,6 +18,6 @@
                 (4, ref('payment_method_easypay')),
             ]"
         />
-        <field name="module_id" ref="base.module_payment_easypay" />
+        <field name="module_id" ref="base.module_payment_easypay_oca" />
     </record>
 </odoo>

@@ -7,13 +7,13 @@ payment methods including credit cards, Multibanco, MB WAY, SEPA Direct
 Debit, and more.
 
 Verified as supported:
-Credit/Debit Card payments,
-Multibanco (MB) reference payments,
-MB WAY.
+- Credit/Debit Card payments,
+- Multibanco (MB) reference payments,
+- MB WAY.
 
 Not yet implemented or verified:
-SEPA Direct Debit,
-Pay by Link,
-Multibanco reference on invoices.
+- SEPA Direct Debit,
+- Pay by Link,
+- Multibanco reference on invoices.
 
 Learn more about EasyPay at <https://www.easypay.pt/>
