@@ -20,6 +20,7 @@
         "data/payment_method_data.xml",
         "data/payment_provider_data.xml",
     ],
+    "images": ["static/description/cover.png"],
     "demo": ["demo/payment_provider_demo.xml"],
     "assets": {
         "web.assets_frontend": [
