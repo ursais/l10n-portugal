@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 ================================================
 Portugal InvoiceXpress Legal Transport Documents
 ================================================
@@ -17,7 +13,7 @@ Portugal InvoiceXpress Legal Transport Documents
 .. |badge1| image:: https://img.shields.io/badge/maturity-Production%2FStable-green.png
     :target: https://odoo-community.org/page/development-status
     :alt: Production/Stable
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fl10n--portugal-lightgray.png?logo=github
@@ -45,26 +41,26 @@ for more details.
 
 **Update March/2026:**
 
-- Can set a specific loading date on the Picking Document. For example,
-  to allow preparing transport document on the day before.
-- Can re-create the transport document after confirming the Picking. For
-  example, to create a new document for the same shipment if the
-  original one ended not happening and its dates are obsolete.
-- Use the pikcing line description on the transport document.
-- Option to include UoM in line descriptions, configured on the
-  Operation Type.
+-  Can set a specific loading date on the Picking Document. For example,
+   to allow preparing transport document on the day before.
+-  Can re-create the transport document after confirming the Picking.
+   For example, to create a new document for the same shipment if the
+   original one ended not happening and its dates are obsolete.
+-  Use the pikcing line description on the transport document.
+-  Option to include UoM in line descriptions, configured on the
+   Operation Type.
 
 **UPDATE November/2021:**
 
 Deliveries:
 
-- Added support to the different document types, Transport ("Guia de
-  Transporte") and Shipment ("Guia de Remessa"). The default document
-  type is set on the Operation Type.
-- Changed the line description to be the Product name, instead of the
-  original Sales Order description, so that it uses the most up to date
-  product description.
-- Added tax details to the document lines.
+-  Added support to the different document types, Transport ("Guia de
+   Transporte") and Shipment ("Guia de Remessa"). The default document
+   type is set on the Operation Type.
+-  Changed the line description to be the Product name, instead of the
+   original Sales Order description, so that it uses the most up to date
+   product description.
+-  Added tax details to the document lines.
 
 **Table of contents**
 
@@ -115,8 +111,8 @@ Authors
 Contributors
 ------------
 
-- Daniel Reis <dreis@opensourceintegrators.com>, `Open Source
-  Integrators <https://www.opensourceintegrators.eu>`__
+-  Daniel Reis <dreis@opensourceintegrators.com>, `Open Source
+   Integrators <https://www.opensourceintegrators.eu>`__
 
 Maintainers
 -----------
