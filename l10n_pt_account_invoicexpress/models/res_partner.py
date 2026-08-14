@@ -11,6 +11,7 @@ class ResPartner(models.Model):
         "InvoiceXpress Code",
         copy=False,
         company_dependent=True,
+        help="Company-specific identifier used for this partner in InvoiceXpress.",
     )
     invoicexpress_id = fields.Char(
         "InvoiceXpress ID",
@@ -50,6 +51,7 @@ class ResPartner(models.Model):
         self.vat and self.check_vat()  # Double check VAT is correct
         InvoiceXpress = self.env["account.invoicexpress"]
         company = company or self.company_id or self.env.company
+        self = self.with_company(company)
         doctype = "client"
 
         if not self.invoicexpress_code:
@@ -81,7 +83,7 @@ class ResPartner(models.Model):
                 new_code = f"ODOO-{self.ref or self.id}-{self.vat or ''}"
                 if code != new_code:
                     self.invoicexpress_code = new_code
-                    return self.set_invoicexpress_contact(company)
+                    return self.set_invoicexpress_contact(company=company)
 
             # Update: PUT /clients/$(client-id).json
             client_id = values.get("id")
