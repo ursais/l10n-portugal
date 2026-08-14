@@ -3,11 +3,11 @@ from unittest.mock import Mock
 
 def mock_response(json, status_code=200):
     """Create a mock HTTP response with the given JSON data and status code."""
-    mock_response = Mock()
-    mock_response.json.return_value = json
-    mock_response.text = str(json)
-    mock_response.status_code = status_code
-    return mock_response
+    response = Mock()
+    response.json.return_value = json
+    response.text = str(json)
+    response.status_code = status_code
+    return response
 
 
 def mock_request_side_effect(method, url, **kwargs):
