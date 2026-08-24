@@ -26,7 +26,7 @@ addon | version | maintainers | summary
 [l10n_pt_certification](l10n_pt_certification/) | 18.0.1.0.0 |  | Portugal - Accounting (Certification)
 [l10n_pt_future_account](l10n_pt_future_account/) | 18.0.1.0.0 |  | Future accounting features for Portugal
 [l10n_pt_payment](l10n_pt_payment/) | 18.0.1.0.0 |  | Portugal-specific payment methods: Multibanco and MB WAY
-[l10n_pt_stock_invoicexpress](l10n_pt_stock_invoicexpress/) | 18.0.1.0.1 | <a href='https://github.com/dreispt'><img src='https://github.com/dreispt.png' width='32' height='32' style='border-radius:50%;' alt='dreispt'/></a> | Portuguese legal transport and shipping documents (Guias de Transporte e Guias de Remessa) generated with InvoiceXpress
+[l10n_pt_stock_invoicexpress](l10n_pt_stock_invoicexpress/) | 18.0.1.3.0 | <a href='https://github.com/dreispt'><img src='https://github.com/dreispt.png' width='32' height='32' style='border-radius:50%;' alt='dreispt'/></a> | Portuguese legal transport and shipping documents (Guias de Transporte e Guias de Remessa) generated with InvoiceXpress
 [l10n_pt_vat](l10n_pt_vat/) | 18.0.1.0.0 | <a href='https://github.com/dreispt'><img src='https://github.com/dreispt.png' width='32' height='32' style='border-radius:50%;' alt='dreispt'/></a> | Portuguese VAT requirements extensions
 [payment_easypay_oca](payment_easypay_oca/) | 18.0.1.0.4 |  | Payment Provider for EasyPay with multiple payment methods
 
