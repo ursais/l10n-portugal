@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 class StockPicking(models.Model):
     _inherit = "stock.picking"
 
-    @api.depends("picking_type_id", "company_id.has_invoicexpress")
+    @api.depends("invoicexpress_doc_type", "company_id.has_invoicexpress")
     def _compute_can_invoicexpress(self):
         for delivery in self:
             delivery.can_invoicexpress = (
@@ -166,10 +166,18 @@ class StockPicking(models.Model):
         }.get(doctype)
 
     def _prepare_invoicexpress_lines(self):
-        lines = self.move_ids_without_package.filtered("quantity")
+        # Build one API line per detailed operation, including products inside
+        # packages (package move lines may not have a related stock.move).
+        # Missing product or zero quantity move lines are kept and use filler
+        # values for the fields that are required by the InvoiceXpress API.
+        move_lines = self.move_line_ids
         # Ensure Taxes are created on InvoiceXpress
-        lines.l10npt_invoicexpress_tax_id.action_invoicexpress_tax_create()
-        return [line._prepare_invoicexpress_line_vals() for line in lines]
+        taxes = (
+            move_lines.move_id.l10npt_invoicexpress_tax_id
+            | move_lines.product_id.taxes_id
+        )
+        taxes.action_invoicexpress_tax_create()
+        return [line._prepare_invoicexpress_line_vals() for line in move_lines]
 
     def _prepare_invoicexpress_vals(self):
         self.ensure_one()
